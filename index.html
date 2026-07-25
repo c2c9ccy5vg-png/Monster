@@ -39,6 +39,7 @@
   button.secondary{background:#a89f8d;box-shadow:0 3px 0 #857c6b;color:#2f2b20;}
   button.secondary:active{box-shadow:0 1px 0 #857c6b;}
   .action-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:6px;}
+  #actionMain button{padding:14px 6px;font-size:13.5px;}
   .action-grid .span2{grid-column:span 2;}
   .scroll{overflow-y:auto;}
 
@@ -57,10 +58,17 @@
     border:2px solid var(--ink);border-radius:8px;padding:8px 10px;font-size:12px;line-height:1.45;
     pointer-events:none;opacity:0;transition:opacity .25s;}
   .world-toast.show{opacity:1;}
+  #npcBox{position:absolute;left:8px;right:8px;bottom:8px;background:#fff;
+    border:2px solid var(--ink);border-radius:10px;padding:9px 10px;z-index:5;
+    box-shadow:0 4px 14px rgba(20,14,30,.35);}
+  #npcName{font-size:11px;font-weight:bold;color:var(--accent);letter-spacing:.5px;}
+  #npcText{font-size:12px;line-height:1.5;margin:4px 0 7px;min-height:34px;}
+  #npcNext{width:100%;padding:9px;font-size:12px;}
 
   #battleCanvas{display:block;width:100%;image-rendering:pixelated;border-radius:6px;border:2px solid var(--ink);}
   .msg-box{background:#fff;border:2px solid var(--ink);border-radius:8px;padding:8px;font-size:12px;
-    min-height:48px;line-height:1.45;margin-top:6px;position:relative;cursor:pointer;}
+    min-height:48px;max-height:210px;overflow-y:auto;line-height:1.45;margin-top:6px;
+    position:relative;cursor:pointer;}
   .msg-box.waiting::after{content:'▶';position:absolute;right:8px;bottom:5px;font-size:11px;
     opacity:.5;animation:blinkArrow 1s steps(1) infinite;}
   @keyframes blinkArrow{50%{opacity:.12;}}
@@ -177,18 +185,22 @@
       <div id="screen-world" class="hidden" style="flex:1;position:relative;">
         <canvas id="worldCanvas" width="352" height="352"></canvas>
         <div class="world-toast" id="worldToast"></div>
+        <div id="npcBox" class="hidden">
+          <div id="npcName"></div>
+          <div id="npcText"></div>
+          <button id="npcNext">Weiter ▶</button>
+        </div>
       </div>
 
       <div id="screen-battle" class="hidden" style="flex:1;display:flex;flex-direction:column;">
         <canvas id="battleCanvas" width="332" height="196"></canvas>
         <div class="msg-box" id="msgBox"></div>
         <div class="action-grid hidden" id="actionMain">
-          <button id="btnMove0"></button><button id="btnMove1"></button>
-          <button id="btnMove2"></button><button id="btnMove3"></button>
+          <button id="btnFight">⚔️ Kampf</button>
           <button id="btnBag">🎒 Beutel</button>
-          <button id="btnCatch">🔴 Fangen</button>
-          <button id="btnSwitch">🔄 Wechseln</button>
-          <button id="btnFlee" class="secondary">💨 Flucht</button>
+          <button id="btnCatch">👥 Team</button>
+          <button id="btnSwitch" class="secondary">💨 Flucht</button>
+          <button id="btnFlee" class="secondary hidden">↩ Auswahl zurück</button>
         </div>
         <div class="action-grid hidden" id="actionContinue">
           <button id="btnContinue" class="span2">Weiter ▶</button>
@@ -465,6 +477,9 @@ const MOVES={
   erzsturm:M('Erzsturm','Metall',26),
   stahlpanzer:{name:'Stahlpanzer',type:'Metall',power:0,kind:'buff',stat:'def',stages:2},
   // --- Attacken der Schriftrollen ---
+  lichtlanze:M('Lichtlanze','Normal',22,{acc:100}),
+  sturmruf:{name:'Sturmruf',type:'Flug',power:0,kind:'buff',stat:'spd',stages:2},
+  aderlass:M('Aderlass','Geist',20,{drain:.6}),
   urfaust:M('Berserkerschlag','Kampf',27),
   sturmschwinge:M('Sturmklinge','Flug',27,{debuff:'spd',stages:1}),
   urdrache:M('Drachenodem','Drache',27),
@@ -664,18 +679,18 @@ LEGENDS.forEach(id=>{DEX_ORDER.push(id);FAMILY_OF[id]=id;});
 const STARTERS=['flamko','aquappi','blattli'];
 
 const LEARNSETS={
-  flamko:[[1,'rempler'],[1,'flammenwurf'],[6,'glutstoss'],[10,'krallenhieb'],[14,'glutwelle'],[18,'kampfschrei'],[22,'steinwurf'],[26,'kraftschlag'],[32,'infernoklinge'],[38,'erholung'],[44,'wuchtstoss']],
+  flamko:[[1,'rempler'],[1,'flammenwurf'],[6,'glutstoss'],[10,'krallenhieb'],[14,'glutwelle'],[18,'kampfschrei'],[22,'steinwurf'],[26,'kraftschlag'],[32,'infernoklinge'],[38,'hitzeschild'],[44,'wuchtstoss']],
   aquappi:[[1,'rempler'],[1,'wasserstrahl'],[6,'nebelstoss'],[10,'krallenhieb'],[14,'wasserwoge'],[18,'aquaheilung'],[22,'blitzschlag'],[26,'kraftschlag'],[32,'sturmflut'],[38,'schild'],[44,'wuchtstoss']],
   blattli:[[1,'rempler'],[1,'blattschuss'],[6,'blattsauger'],[10,'krallenhieb'],[14,'blattklinge'],[18,'sporennebel'],[22,'gifthieb'],[26,'kraftschlag'],[32,'urwaldzorn'],[38,'erholung'],[44,'wuchtstoss']],
   zappzap:[[1,'rempler'],[1,'blitzschlag'],[6,'funkenflug'],[10,'krallenhieb'],[14,'donnerschlag'],[18,'donnerwelle'],[22,'eiswind'],[26,'kraftschlag'],[32,'gewittersturm'],[38,'kampfschrei'],[44,'wuchtstoss']],
-  brockel:[[1,'rempler'],[1,'steinwurf'],[6,'steinstaub'],[10,'krallenhieb'],[14,'felslawine'],[18,'panzerung'],[22,'flammenwurf'],[26,'kraftschlag'],[32,'bergsturz'],[38,'erholung'],[44,'wuchtstoss']],
-  spuki:[[1,'rempler'],[1,'spukschlag'],[6,'schattenzehr'],[10,'krallenhieb'],[14,'schattenkralle'],[18,'fluch'],[22,'gifthieb'],[26,'kraftschlag'],[32,'seelenriss'],[38,'erholung'],[44,'wuchtstoss']],
+  brockel:[[1,'rempler'],[1,'steinwurf'],[6,'steinstaub'],[10,'krallenhieb'],[14,'felslawine'],[18,'panzerung'],[22,'flammenwurf'],[26,'kraftschlag'],[32,'bergsturz'],[38,'einschuechtern'],[44,'wuchtstoss']],
+  spuki:[[1,'rempler'],[1,'spukschlag'],[6,'schattenzehr'],[10,'krallenhieb'],[14,'schattenkralle'],[18,'fluch'],[22,'gifthieb'],[26,'kraftschlag'],[32,'seelenriss'],[38,'giftwolke'],[44,'wuchtstoss']],
   frosti:[[1,'rempler'],[1,'frostbiss'],[6,'frosthauch'],[10,'krallenhieb'],[14,'eissturm'],[18,'eiswind'],[22,'wasserstrahl'],[26,'kraftschlag'],[32,'gletscherbruch'],[38,'schild'],[44,'wuchtstoss']],
   giftling:[[1,'rempler'],[1,'giftstachel'],[6,'gifthieb'],[10,'krallenhieb'],[14,'saeurewelle'],[18,'giftwolke'],[22,'schattenzehr'],[26,'kraftschlag'],[32,'toxinflut'],[38,'einschuechtern'],[44,'wuchtstoss']],
-  flatterix:[[1,'rempler'],[1,'windstoss'],[6,'einschuechtern'],[10,'luftwirbel'],[14,'sturmflug'],[18,'kampfschrei'],[22,'krallenhieb'],[26,'kraftschlag'],[32,'orkanschlag'],[38,'erholung'],[44,'wuchtstoss']],
-  draklin:[[1,'rempler'],[1,'drachenklaue'],[6,'krallenhieb'],[10,'einschuechtern'],[16,'drachenstoss'],[20,'flammenwurf'],[24,'drachentanz'],[28,'kraftschlag'],[34,'drachensturm'],[40,'erholung'],[46,'wuchtstoss']],
-  erzling:[[1,'rempler'],[1,'metallklaue'],[6,'steinstaub'],[10,'krallenhieb'],[15,'stahlschlag'],[19,'stahlpanzer'],[23,'steinwurf'],[28,'kraftschlag'],[33,'erzsturm'],[39,'erholung'],[45,'wuchtstoss']],
-  faustli:[[1,'rempler'],[1,'fausthieb'],[6,'konter'],[10,'krallenhieb'],[14,'wirbelschlag'],[18,'ausholer'],[22,'steinwurf'],[26,'kraftschlag'],[32,'titanenfaust'],[38,'erholung'],[44,'wuchtstoss']],
+  flatterix:[[1,'rempler'],[1,'windstoss'],[6,'einschuechtern'],[10,'luftwirbel'],[14,'sturmflug'],[18,'kampfschrei'],[22,'krallenhieb'],[26,'kraftschlag'],[32,'orkanschlag'],[38,'eiswind'],[44,'wuchtstoss']],
+  draklin:[[1,'rempler'],[1,'drachenklaue'],[6,'krallenhieb'],[10,'einschuechtern'],[16,'drachenstoss'],[20,'flammenwurf'],[24,'drachentanz'],[28,'kraftschlag'],[34,'drachensturm'],[40,'glutwelle'],[46,'wuchtstoss']],
+  erzling:[[1,'rempler'],[1,'metallklaue'],[6,'steinstaub'],[10,'krallenhieb'],[15,'stahlschlag'],[19,'stahlpanzer'],[23,'steinwurf'],[28,'kraftschlag'],[33,'erzsturm'],[39,'felslawine'],[45,'wuchtstoss']],
+  faustli:[[1,'rempler'],[1,'fausthieb'],[6,'konter'],[10,'krallenhieb'],[14,'wirbelschlag'],[18,'ausholer'],[22,'steinwurf'],[26,'kraftschlag'],[32,'titanenfaust'],[38,'panzerung'],[44,'wuchtstoss']],
   silvarion:[[1,'blattklinge'],[1,'krallenhieb'],[1,'sporennebel'],[1,'weltenwurzel']],
   voltrex:[[1,'donnerschlag'],[1,'krallenhieb'],[1,'eiswind'],[1,'sturmzorn']],
   umbrakor:[[1,'schattenkralle'],[1,'gifthieb'],[1,'fluch'],[1,'nachtschlund']],
@@ -704,6 +719,9 @@ const ITEMS={
   r_gift:{name:'Rolle: Giftflut',desc:'Nur für Gift-Kryptiden',price:0,kind:'scroll',move:'giftflut',forType:'Gift'},
   r_stein:{name:'Rolle: Erdstoß',desc:'Nur für Stein-Kryptiden',price:0,kind:'scroll',move:'erdstoss',forType:'Stein'},
   r_eis:{name:'Rolle: Frostnova',desc:'Nur für Eis-Kryptiden',price:0,kind:'scroll',move:'frostnova',forType:'Eis'},
+  r_licht:{name:'Rolle: Lichtlanze',desc:'Für jede Kryptide · trifft immer',price:0,kind:'scroll',move:'lichtlanze',forType:null},
+  r_sturm:{name:'Rolle: Sturmruf',desc:'Für jede Kryptide · steigert Initiative',price:0,kind:'scroll',move:'sturmruf',forType:null},
+  r_ader:{name:'Rolle: Aderlass',desc:'Nur für Geist-Kryptiden',price:0,kind:'scroll',move:'aderlass',forType:'Geist'},
   r_kampf:{name:'Rolle: Berserkerschlag',desc:'Nur für Kampf-Kryptiden',price:0,kind:'scroll',move:'urfaust',forType:'Kampf'},
   r_flug:{name:'Rolle: Sturmklinge',desc:'Nur für Flug-Kryptiden',price:0,kind:'scroll',move:'sturmschwinge',forType:'Flug'},
   r_drache:{name:'Rolle: Drachenodem',desc:'Nur für Drache-Kryptiden',price:0,kind:'scroll',move:'urdrache',forType:'Drache'},
@@ -736,6 +754,117 @@ const MAPS=[
   spawn:[10,16],house:[9,7],trainers:[[4,4],[17,4],[8,6],[13,6],[4,11]],boss:[10,2],rival:[17,11]},
  {rows:['TTTTTTTTTTTTTTTTTTTTTT','T.........GG.........T','T..,,,....PP....,,,..T','T..TTTT...PP...TTTT..T','T..TTTT...PP...TTTT..T','T..,,,....PP....,,,..T','T....PPPPPPPPPPPP....T','T....P..........P....T','T....P..HHHH....P....T','T....P..HHHH....P....T','T....PPPPPPPPPPPP....T','T.........PP.........T','T..TTTT...PP...TTTT..T','T..TTTT...PP...TTTT..T','T.........PP.........T','T..,,,,...PP...,,,,..T','T..,,,,...PP...,,,,..T','TTTTTTTTTTTTTTTTTTTTTT'],
   spawn:[10,16],house:[8,8],trainers:[[10,14],[6,11],[14,11],[6,5],[14,5]],boss:null,rival:null,legend:[2,11]}
+];
+
+// ---- Stadt (gemeinsames Layout, je Gebiet eingefärbt) ----
+// B=Gebäudewand H=Rasthaus A=Arena N=Nordausgang S=Südausgang P=Weg .=Boden T=Rand
+const CITY_ROWS=[
+'TTTTTTTTTTTTTTTTTTTTTT',
+'T.........NN.........T',
+'T.........PP.........T',
+'T..BBBBB..PP..BBBBB..T',
+'T..BBBBB..PP..BBBBB..T',
+'T..BBHBB..PP..BBABB..T',
+'T....P....PP....P....T',
+'T....PPPPPPPPPPPP....T',
+'T.........PP.........T',
+'T..BBB....PP....BBB..T',
+'T..BBB....PP....BBB..T',
+'T.........PP.........T',
+'T..BBB....PP....BBB..T',
+'T..BBB....PP....BBB..T',
+'T.........PP.........T',
+'T.........PP.........T',
+'T.........SS.........T',
+'TTTTTTTTTTTTTTTTTTTTTT'];
+// ---- Arena (Innenraum) ----
+// F=Boden D=Ausgang B=Wand
+const ARENA_ROWS=[
+'BBBBBBBBBBBBBBBBBBBBBB',
+'BFFFFFFFFFFFFFFFFFFFFB',
+'BFFFFFFFFFFFFFFFFFFFFB',
+'BFFFFFFFFFFFFFFFFFFFFB',
+'BFFBBFFFFFFFFFFBBFFFFB',
+'BFFBBFFFFFFFFFFBBFFFFB',
+'BFFFFFFFFFFFFFFFFFFFFB',
+'BFFFFFFFFFFFFFFFFFFFFB',
+'BFFBBFFFFFFFFFFBBFFFFB',
+'BFFBBFFFFFFFFFFBBFFFFB',
+'BFFFFFFFFFFFFFFFFFFFFB',
+'BFFFFFFFFFFFFFFFFFFFFB',
+'BFFBBFFFFFFFFFFBBFFFFB',
+'BFFBBFFFFFFFFFFBBFFFFB',
+'BFFFFFFFFFFFFFFFFFFFFB',
+'BFFFFFFFFFFFFFFFFFFFFB',
+'BFFFFFFFFFDDFFFFFFFFFB',
+'BBBBBBBBBBBBBBBBBBBBBB'];
+const ARENA_POS=[[6,14],[15,14],[6,10],[15,10],[10,6]];
+const ARENA_BOSS=[10,2];
+const CITY_DOOR_H=[5,5], CITY_DOOR_A=[16,5];
+const CITY_NPCS_POS=[[6,8],[15,8],[6,11],[15,11],[8,14],[13,14]];
+
+// ---- Routen entstehen aus den alten Karten ----
+const ROUTES=MAPS.map((m,i)=>({
+  rows:m.rows.map((r,y)=>{
+    let t=r.replace(/H/g,'.');
+    if(y===1)t=t.slice(0,10)+'NN'+t.slice(12);
+    if(y===16)t=t.slice(0,10)+'SS'+t.slice(12);
+    return t;
+  }),
+  trainers:m.trainers, rival:m.rival, legend:m.legend
+}));
+const SPAWN_SUED=[10,15], SPAWN_NORD=[10,2];
+
+// ---- Stadtnamen ----
+const ARENA_TR_NAMES=[
+ ['Hallenwache Ben','Prüferin Ina','Wächter Rolf','Kämpferin Sue','Veteran Ove'],
+ ['Waldwache Tord','Prüfer Elm','Wächterin Bea','Jägerin Nia','Veteran Ulf'],
+ ['Hafenwache Sten','Prüferin Mia','Wächter Jorn','Taucherin Ea','Veteran Kai'],
+ ['Steppenwache Rok','Prüfer Van','Wächterin Ida','Reiterin Lo','Veteran Bran'],
+ ['Glutwache Zed','Prüferin Ash','Wächter Korr','Schmiedin Fee','Veteran Drax'],
+ ['Nebelwache Wyn','Prüfer Mor','Wächterin Sil','Seherin Ora','Veteran Gral'],
+ ['Felswache Urd','Prüfer Stein','Wächterin Berg','Kletterin Ea','Veteran Thal'],
+ ['','','','','']
+];
+const CITY_NAMES=['Wiesenhain','Flüsterfurt','Kristallbucht','Donnerfeste',
+  'Ascheort','Nebelhalt','Felsenwacht','Meisterstadt'];
+const ARENA_NAMES=['Wiesenhalle','Waldhalle','Küstenhalle','Steppenhalle',
+  'Kraterhalle','Moorhalle','Felsenhalle','Liga-Halle'];
+
+// ---- Bewohner: Tipps, Geschenke, Schriftrollen ----
+const NPC_DATA=[
+ [{n:'Alte Marta',t:['Willkommen in Wiesenhain!','Im Rasthaus links wirst du geheilt – und kannst einkaufen.','Die Halle rechts prüft, ob du zum Weiterziehen bereit bist.']},
+  {n:'Junge Nele',t:['Feuer schlägt Pflanze, Wasser schlägt Feuer, Pflanze schlägt Wasser.','Merk dir das, dann gewinnst du fast jeden Kampf am Anfang.']},
+  {n:'Händler Kurt',t:['Nimm das, für den Anfang.','Wirf die Kugel erst, wenn der Gegner kaum noch Kraft hat.'],gift:'superkugel',n2:3},
+  {n:'Wanderer Ove',t:['Auf dem Weg nach Norden warten Trainer.','Sie sind stärker als das, was im Gras herumläuft.']}],
+ [{n:'Förstersfrau Ida',t:['Der Wald verschluckt Geräusche – und manchmal ganze Kryptiden.','Geist-Attacken prallen an Normal-Kryptiden völlig ab. Umgekehrt genauso.']},
+  {n:'Kräutersammler Jo',t:['Hier, gegen Gift und Lähmung.','Statusprobleme verschwinden nicht von selbst im Kampf.'],gift:'gegenmittel',n2:3},
+  {n:'Schreiber Anselm',t:['Ich habe eine alte Rolle gefunden. Für dich.','Lichtlanze verfehlt niemals ihr Ziel. Das ist mehr wert, als es klingt.'],gift:'r_licht',n2:1},
+  {n:'Kind Pim',t:['Im hohen Gras verstecken sich manchmal scheue Kryptiden!','Die hauen nach zwei Runden ab. Man muss schnell sein.']}],
+ [{n:'Kapitänin Wilma',t:['Bei uns regnet es fast immer.','Regen macht Wasser-Attacken stärker und Feuer schwächer. Denk dran.']},
+  {n:'Taucher Ben',t:['Krabbo ist Wasser und Stein zugleich.','Doppeltypen erben beide Schwächen – Pflanze trifft die doppelt hart.']},
+  {n:'Netzflickerin Ru',t:['Für die weite Reise.','Tragitems sind mehr wert als ein Trank. Sie wirken jede Runde.'],gift:'ueberreste',n2:1},
+  {n:'Alter Seebär',t:['Attacken haben Punkte. Sind die leer, bleibt nur ein müder Stoß.','Im Rasthaus füllen sie sich wieder auf.']}],
+ [{n:'Reiterin Hanne',t:['Der Sandsturm hier stärkt Stein und schwächt Pflanze.','Wer sich auskennt, wählt sein Team danach.']},
+  {n:'Bogner Falk',t:['Elektro trifft Flug hart. Pflanze steckt es dagegen weg.','Viele glauben das Gegenteil – und verlieren.']},
+  {n:'Späherin Yun',t:['Nimm den. Er macht deine Kryptide schneller.','Wer zuerst schlägt, gewinnt oft, bevor es eng wird.'],gift:'schnellfeder',n2:1},
+  {n:'Hirte Bo',t:['Ein Kampf hat höchstens vier Attacken zur Auswahl.','Nimm nicht vier vom selben Typ. Deckung ist alles.']}],
+ [{n:'Schmiedin Runa',t:['Hier, für harte Zeiten.','Ein Machtband macht jeden Angriff spürbar härter.'],gift:'machtband',n2:1},
+  {n:'Aschegräber Tom',t:['Metall-Kryptiden halten fast alles aus.','Aber Feuer und Kampf brechen ihren Panzer.']},
+  {n:'Wirtin Cara',t:['Die Halle hier verlangt mehr Herausforderer als anderswo.','Je weiter du kommst, desto länger der Weg zum Hallenmeister.']},
+  {n:'Bote Nils',t:['Man kann zurückgehen, weißt du?','Der Südausgang bringt dich auf den Weg, den du gekommen bist.']}],
+ [{n:'Seherin Alma',t:['Nimm diese Rolle, Wanderer.','Sturmruf steigert die Initiative. Keine andere Attacke tut das.'],gift:'r_sturm',n2:1},
+  {n:'Moorkundiger Veit',t:['Nebel stärkt Geist und schwächt Normal.','Hier unten kämpft es sich anders als überall sonst.']},
+  {n:'Irrlicht-Jäger Ru',t:['Vergiftung frisst jede Runde an den Kräften.','Gegen zähe Gegner ist das oft besser als roher Schaden.']},
+  {n:'Grufti Odo',t:['Für die Geister unter deinen Freunden.','Aderlass saugt mehr Leben als jede andere Attacke.'],gift:'r_ader',n2:1}],
+ [{n:'Bergwacht Silke',t:['Schneetreiben stärkt Eis und schwächt Pflanze.','Über den Pass kommt nur, wer vorbereitet ist.']},
+  {n:'Steinmetz Gorm',t:['Nimm den Schutzstein. Du wirst ihn brauchen.','Was danach kommt, verzeiht keine Fehler mehr.'],gift:'schutzstein',n2:1},
+  {n:'Kletterin Mai',t:['In der Halle warten fünf Herausforderer vor dem Meister.','Heil dich vorher. Es gibt keine Pause dazwischen.']},
+  {n:'Alter Wirt',t:['Hinter dem Pass liegt die Meisterstadt.','Dort endet jede Reise – so oder so.']}],
+ [{n:'Torwächterin Vala',t:['Die Liga-Halle nimmt nur Meister auf.','Fünf Meister, keine Pause. Deine AP füllen sich nicht zwischendurch.']},
+  {n:'Chronist Aldo',t:['Ich schreibe auf, wer die Liga bezwingt.','Bisher ist die Liste kurz.']},
+  {n:'Heilerin Sona',t:['Nimm das. Weiter kann ich dir nicht helfen.','Ab hier zählt nur noch dein Team.'],gift:'hyperkugel',n2:5},
+  {n:'Rivale Kai',t:['Also hast du es doch bis hierher geschafft.','Ich bin vor dir dran. Aber danach... viel Glück.']}]
 ];
 
 const AREA_DEFS=[
@@ -797,8 +926,10 @@ function maxAPof(m,i){const mo=MOVES[m.moves[i]];return mo?moveAP(mo):10;}
 function refreshStats(m){
   const s=statsFor(m.id,m.level,m.shiny);
   const diff=s.maxHp-(m.maxHp||s.maxHp);
+  const ohnmaechtig=(m.hp!=null&&m.hp<=0);
   m.maxHp=s.maxHp;
-  m.hp=Math.max(0,Math.min(m.maxHp,(m.hp==null?s.maxHp:m.hp)+Math.max(0,diff)));
+  if(ohnmaechtig)m.hp=0;                              // niemals von selbst aufstehen
+  else m.hp=Math.max(0,Math.min(m.maxHp,(m.hp==null?s.maxHp:m.hp)+Math.max(0,diff)));
   m.atk=s.atk;m.def=s.def;m.spd=s.spd;
 }
 const mName=m=>(m.shiny?'✨':'')+(m.nick||DEX[m.id].name);
@@ -810,7 +941,8 @@ const mMoves=m=>m.moves.map(i=>MOVES[i]).filter(Boolean);
 
 // ============================ ZUSTAND ============================
 const state={team:[],box:[],leadIdx:0,bag:{kugel:5,trank:2},money:600,
-  seen:[],caught:[],defeated:[],rivals:[],legends:[],found:[],scrolls:[],pendingLearn:[],pendingEvo:[],area:0,px:10,py:16,
+  seen:[],caught:[],defeated:[],rivals:[],legends:[],found:[],scrolls:[],npcGifts:[],
+  pendingLearn:[],pendingEvo:[],area:0,loc:'stadt',px:10,py:15,
   champion:false,mode:'title',healed:false,battle:null,dexRewards:[]};
 
 const $=id=>document.getElementById(id);
@@ -959,7 +1091,8 @@ function withTimeout(p,ms){return Promise.race([p,new Promise((_,rj)=>setTimeout
 function snapshot(){
   return{v:6,team:state.team,box:state.box,leadIdx:state.leadIdx,bag:state.bag,money:state.money,
     seen:state.seen,caught:state.caught,defeated:state.defeated,rivals:state.rivals,
-    legends:state.legends,found:state.found,scrolls:state.scrolls,area:state.area,
+    legends:state.legends,found:state.found,scrolls:state.scrolls,npcGifts:state.npcGifts,
+    area:state.area,loc:state.loc,
     px:state.px,py:state.py,champion:state.champion,starter:state.starter,dexRewards:state.dexRewards};
 }
 // Ältere Spielstände: Katalog aus vorhandenen Kryptiden ableiten
@@ -989,6 +1122,7 @@ function applySave(s){
   state.leadIdx=s.leadIdx||0;state.bag=s.bag||{kugel:5};state.money=s.money==null?600:s.money;
   state.seen=s.seen||[];state.caught=s.caught||[];state.defeated=s.defeated||[];state.rivals=s.rivals||[];
   state.legends=s.legends||[];state.found=s.found||[];state.scrolls=s.scrolls||[];
+  state.npcGifts=s.npcGifts||[];state.loc=s.loc||'stadt';state._useItem=null;
   state.pendingLearn=[];state.pendingEvo=[];state._equip=null;
   state.area=s.area||0;state.px=s.px==null?10:s.px;state.py=s.py==null?16:s.py;
   state.champion=!!s.champion;state.starter=s.starter||'flamko';state.dexRewards=s.dexRewards||[];
@@ -1056,9 +1190,10 @@ async function initTitle(){
     const go=()=>{
       state.starter=id;state.team=[makeMonster(id,5)];state.box=[];state.leadIdx=0;
       state.bag={kugel:5,trank:2};state.money=600;state.seen=[id];state.caught=[id];
-      state.defeated=[];state.rivals=[];state.legends=[];state.found=[];state.scrolls=[];
+      state.defeated=[];state.rivals=[];state.legends=[];state.found=[];state.scrolls=[];state.npcGifts=[];
+    state.loc='stadt';
     state.pendingLearn=[];state.pendingEvo=[];state._equip=null;state.area=0;state.champion=false;state.dexRewards=[];
-      state.px=MAPS[0].spawn[0];state.py=MAPS[0].spawn[1];state.healed=false;
+      state.px=SPAWN_SUED[0];state.py=SPAWN_SUED[1];state.healed=false;
       enterWorld();toast('Willkommen auf der '+areaDef().name+'! 🌿',3000);
     };
     card.addEventListener('click',go);
@@ -1081,23 +1216,94 @@ async function initTitle(){
 // ============================ OVERWORLD ============================
 const TILE=22,VW=16,VH=16;
 const wctx=$('worldCanvas').getContext('2d');
-const tileAt=(x,y)=>{const m=areaMap().rows;return(x<0||y<0||y>=m.length||x>=m[0].length)?'T':m[y][x];};
-function trainerAt(x,y){return areaTrainers().find(t=>t.pos&&t.pos[0]===x&&t.pos[1]===y);}
-const isDone=k=>state.defeated.indexOf(k)>=0;
-function bossCleared(){
-  if(state.area<7)return isDone(state.area+'-boss');
-  return AREAS[7].trainers.every(t=>isDone(t.key));
+// Aktueller Ort: 'stadt' | 'route' | 'arena'
+function locRows(){
+  if(state.loc==='stadt')return CITY_ROWS;
+  if(state.loc==='arena')return ARENA_ROWS;
+  return ROUTES[state.area].rows;
 }
+function locName(){
+  if(state.loc==='stadt')return CITY_NAMES[state.area];
+  if(state.loc==='arena')return ARENA_NAMES[state.area];
+  return 'Route '+(state.area+1);
+}
+const tileAt=(x,y)=>{const m=locRows();return(x<0||y<0||y>=m.length||x>=m[0].length)?'T':m[y][x];};
+// Wie viele Hallen-Herausforderer stehen vor dem Meister?
+function arenaCount(){return Math.min(5,state.area+1);}
+function arenaTrainers(){
+  const a=state.area,n=arenaCount(),list=[];
+  for(let i=0;i<n;i++){
+    const lvl=Math.max(3,AREA_DEFS[a].cap-6+i*2);
+    list.push({key:'arena-'+a+'-'+i,pos:ARENA_POS[i],name:ARENA_TR_NAMES[a][i],
+      kind:'normal',smart:a>=4,order:i,
+      team:genTeam(AREA_DEFS[a].roster,lvl,Math.min(3,1+Math.floor(a/3))),
+      pal:TR_PALS[i%5],lvl:lvl,
+      intro:ARENA_TR_NAMES[a][i]+': "Du kommst hier nicht einfach durch!"',
+      win:ARENA_TR_NAMES[a][i]+': "Zieh weiter – der Meister wartet."'});
+  }
+  return list;
+}
+function arenaBoss(){
+  const t=AREAS[state.area].trainers.find(x=>x.key.endsWith('boss'))||AREAS[state.area].trainers[0];
+  return t?Object.assign({},t,{pos:ARENA_BOSS}):null;
+}
+function ligaTrainers(){
+  return AREAS[7].trainers.map((t,i)=>Object.assign({},t,{pos:ARENA_POS[i]||ARENA_BOSS,order:i}));
+}
+// Alle Personen am aktuellen Ort
+function hierTrainers(){
+  if(state.loc==='arena'){
+    if(state.area===7)return ligaTrainers();
+    const l=arenaTrainers();const b=arenaBoss();
+    if(b)l.push(Object.assign({},b,{istMeister:true}));
+    return l;
+  }
+  if(state.loc==='route'){
+    const r=ROUTES[state.area],list=[];
+    AREAS[state.area].trainers.filter(t=>!t.key.endsWith('boss')).forEach((t,i)=>{
+      if(r.trainers[i])list.push(Object.assign({},t,{pos:r.trainers[i]}));
+    });
+    const rv=rivalFor(state.area);
+    if(rv&&r.rival)list.push(Object.assign({},rv,{pos:r.rival}));
+    return list;
+  }
+  return [];
+}
+function trainerAt(x,y){return hierTrainers().find(t=>t.pos&&t.pos[0]===x&&t.pos[1]===y);}
+function npcAt(x,y){
+  if(state.loc!=='stadt')return null;
+  const liste=NPC_DATA[state.area]||[];
+  for(let i=0;i<liste.length;i++){
+    const p=CITY_NPCS_POS[i];
+    if(p&&p[0]===x&&p[1]===y)return Object.assign({},liste[i],{idx:i});
+  }
+  return null;
+}
+const isDone=k=>state.defeated.indexOf(k)>=0;
+function bossCleared(){return arenaCleared(state.area);}
 function isGate(x,y){return tileAt(x,y)==='G';}
+function activeLegend2(){return state.loc==='route'?activeLegend():null;}
 function activeLegend(){
   const L=legendFor(state.area);
   return(L&&state.legends.indexOf(L.key)<0)?L:null;
 }
+function nordOffen(){
+  // Aus der Stadt auf die Route: immer offen (dort trainiert man)
+  if(state.loc==='stadt')return true;
+  // Von der Route in die nächste Stadt: erst nach der Halle
+  if(state.loc==='route')return arenaCleared(state.area);
+  return true;
+}
+function arenaCleared(a){
+  if(a===7)return AREAS[7].trainers.every(t=>isDone(t.key));
+  return isDone(a+'-boss');
+}
 function isBlocked(x,y){
   const t=tileAt(x,y);
-  if(t==='T'||t==='W')return true;
+  if(t==='T'||t==='W'||t==='B')return true;
   const tr=trainerAt(x,y);
   if(tr&&!isDone(tr.key))return true;
+  if(npcAt(x,y))return true;
   const L=activeLegend();
   if(L&&L.pos[0]===x&&L.pos[1]===y)return true;
   return false;
@@ -1177,6 +1383,35 @@ function drawTile(t,sx,sy,gx,gy){
       wctx.fillStyle=shade(S.tree,.75);
       wctx.beginPath();wctx.arc(sx+14+sway,sy+12,3.4,0,Math.PI*2);wctx.fill();
       break;}
+    case 'B':{   // Gebäudewand
+      wctx.fillStyle=shade(S.path,.72);wctx.fillRect(sx,sy,TILE+1,TILE+1);
+      wctx.fillStyle=shade(S.path,.62);
+      wctx.fillRect(sx,sy,TILE+1,2);wctx.fillRect(sx,sy+TILE-2,TILE+1,2);
+      if(r>.6){wctx.fillStyle='#9fd0e8';wctx.fillRect(sx+6,sy+6,9,7);
+        wctx.fillStyle='rgba(255,255,255,.55)';wctx.fillRect(sx+6,sy+6,9,2);}
+      break;}
+    case 'F':{   // Hallenboden
+      wctx.fillStyle=((gx+gy)%2)?shade(S.path,.9):shade(S.path,.82);
+      wctx.fillRect(sx,sy,TILE+1,TILE+1);
+      break;}
+    case 'A':{   // Arenatür
+      wctx.fillStyle=shade(S.path,.72);wctx.fillRect(sx,sy,TILE+1,TILE+1);
+      wctx.fillStyle='#c9a24a';wctx.fillRect(sx+3,sy+4,TILE-6,TILE-4);
+      wctx.fillStyle='#7a5f2a';wctx.fillRect(sx+3,sy+4,TILE-6,3);
+      wctx.fillStyle='#f0d240';wctx.fillRect(sx+9,sy+11,4,4);
+      break;}
+    case 'D':{   // Ausgang aus der Halle
+      wctx.fillStyle=shade(S.path,.82);wctx.fillRect(sx,sy,TILE+1,TILE+1);
+      wctx.fillStyle='#7fe0a0';wctx.fillRect(sx+2,sy+3,TILE-4,TILE-6);
+      wctx.fillStyle='rgba(0,0,0,.25)';wctx.fillRect(sx+2,sy+3,TILE-4,3);
+      break;}
+    case 'N': case 'S':{  // Orts-Ausgänge
+      const offen=(t==='N')?nordOffen():true;
+      wctx.fillStyle='#2e2448';wctx.fillRect(sx,sy,TILE+1,TILE+1);
+      wctx.fillStyle=offen?'#7fe0a0':'#c94f6d';
+      wctx.fillRect(sx+2,sy+3,18,16);
+      wctx.fillStyle='rgba(0,0,0,.28)';wctx.fillRect(sx+2,sy+3,18,3);
+      break;}
     case 'H':
       wctx.fillStyle='#f5efe0';wctx.fillRect(sx,sy,TILE+1,TILE+1);
       wctx.fillStyle=shade('#f5efe0',.9);wctx.fillRect(sx,sy+TILE-3,TILE+1,3);
@@ -1201,19 +1436,19 @@ function drawTile(t,sx,sy,gx,gy){
   }
 }
 function drawWorld(){
-  const mp=areaMap();
+  const rows=locRows();
   // interpolierte Spielerposition für flüssiges Laufen
   let ppx=state.px,ppy=state.py;
   if(wfx.anim){const a=wfx.anim,k=Math.min(1,a.k);
     ppx=a.fx+(a.tx-a.fx)*k;ppy=a.fy+(a.ty-a.fy)*k;}
   let camX=ppx-(VW-1)/2,camY=ppy-(VH-1)/2;
-  camX=Math.max(0,Math.min(mp.rows[0].length-VW,camX));
-  camY=Math.max(0,Math.min(mp.rows.length-VH,camY));
+  camX=Math.max(0,Math.min(rows[0].length-VW,camX));
+  camY=Math.max(0,Math.min(rows.length-VH,camY));
   const x0=Math.floor(camX),y0=Math.floor(camY);
   for(let y=y0-1;y<y0+VH+2;y++)for(let x=x0-1;x<x0+VW+2;x++){
     drawTile(tileAt(x,y),Math.round((x-camX)*TILE),Math.round((y-camY)*TILE),x,y);
   }
-  areaTrainers().forEach(t=>{
+  hierTrainers().forEach(t=>{
     if(!t.pos)return;
     const sx=Math.round((t.pos[0]-camX)*TILE),sy=Math.round((t.pos[1]-camY)*TILE);
     if(sx<-TILE*2||sy<-TILE*2||sx>VW*TILE+TILE||sy>VH*TILE+TILE)return;
@@ -1229,21 +1464,22 @@ function drawWorld(){
       if(t.dbl)wctx.fillRect(sx+15,sy-7+pulse,3,4);
     }
   });
-  // Rückweg-Markierung am unteren Rand
-  if(state.area>0){
-    const mp=areaMap();
-    const rx=Math.round((mp.spawn[0]-camX)*TILE),ry=Math.round((mp.rows.length-1-camY)*TILE);
-    if(ry>-TILE&&ry<VH*TILE+TILE){
-      wctx.fillStyle='#2e2448';wctx.fillRect(rx-TILE,ry,TILE*3,TILE);
-      wctx.fillStyle='#7fe0a0';wctx.fillRect(rx-TILE+3,ry+3,TILE*3-6,TILE-6);
-      wctx.fillStyle='#1a1430';wctx.font='bold 10px "Courier New",monospace';
-      wctx.textBaseline='middle';wctx.textAlign='center';
-      wctx.fillText('◀ ZURÜCK',rx+TILE/2,ry+TILE/2);
-      wctx.textAlign='left';
-    }
+  // Bewohner zeichnen
+  if(state.loc==='stadt'){
+    (NPC_DATA[state.area]||[]).forEach((np,i)=>{
+      const p2=CITY_NPCS_POS[i];if(!p2)return;
+      const sx=Math.round((p2[0]-camX)*TILE),sy=Math.round((p2[1]-camY)*TILE);
+      if(sx<-TILE*2||sy<-TILE*2||sx>VW*TILE+TILE||sy>VH*TILE+TILE)return;
+      const bob=Math.sin(wfx.t*1.5+i)*.8;
+      paintHuman(wctx,NPC_PALS[i%NPC_PALS.length],sx-1,sy-1+bob,2);
+      if(np.gift&&(state.npcGifts||[]).indexOf(state.area+'-'+i)<0){
+        const pulse=Math.sin(wfx.t*4)*1.5;
+        wctx.fillStyle='#7fe0a0';wctx.fillRect(sx+8,sy-7+pulse,6,4);
+      }
+    });
   }
   // Legendäres Monster auf der Karte
-  const LG=activeLegend();
+  const LG=activeLegend2();
   if(LG){
     const sx=Math.round((LG.pos[0]-camX)*TILE),sy=Math.round((LG.pos[1]-camY)*TILE);
     if(sx>-TILE*2&&sy>-TILE*2&&sx<VW*TILE+TILE&&sy<VH*TILE+TILE){
@@ -1265,14 +1501,25 @@ function drawWorld(){
   hg.addColorStop(0,'rgba(28,20,44,.85)');hg.addColorStop(1,'rgba(28,20,44,.6)');
   wctx.fillStyle=hg;wctx.fillRect(0,0,VW*TILE,22);
   wctx.fillStyle='#fff';wctx.font='bold 10px "Courier New",monospace';wctx.textBaseline='middle';
-  const tot=state.area<7?6:5,done=AREAS[state.area].trainers.filter(t=>isDone(t.key)).length;
   const WW=curWeather();
-  wctx.fillText('G'+(state.area+1)+'/8 '+areaDef().name+'  Lv≤'+areaDef().cap+
-    '  T'+done+'/'+tot+'  💰'+state.money+(WW?'  '+WW.icon:''),5,11);
+  let zusatz='';
+  if(state.loc==='arena'){
+    const liste=state.area===7?ligaTrainers():arenaTrainers().concat([arenaBoss()].filter(Boolean));
+    const f=liste.filter(t=>t&&isDone(t.key)).length;
+    zusatz='  Halle '+f+'/'+liste.length;
+  }else if(state.loc==='route'){
+    const liste=hierTrainers();
+    zusatz='  Trainer '+liste.filter(t=>isDone(t.key)).length+'/'+liste.length;
+  }else{
+    zusatz=arenaCleared(state.area)?'  ✓ Halle bezwungen':'  ⚔️ Halle offen';
+  }
+  if(state.loc==='route'&&!arenaCleared(state.area))zusatz+='  🔒 Nord';
+  wctx.fillText(locName()+'  Lv≤'+areaDef().cap+zusatz+'  💰'+state.money+(WW?'  '+WW.icon:''),5,11);
 }
 function enterWorld(){window.__booted=true;showScreen('world');wfx.anim=null;startWorldLoop();drawWorld();}
 const FIND_POOL=['trank','kugel','gegenmittel','supertrank','superkugel','beleber','ueberreste'];
 function hiddenFindAt(x,y){
+  if(state.loc!=='route')return null;
   const t=tileAt(x,y);
   if(t!=='.'&&t!==',')return null;
   const r=h2(x*7+state.area*131,y*13+state.area*57);
@@ -1298,52 +1545,130 @@ let moveLock=false;
 async function movePlayer(dx,dy){
   if(state.mode!=='world'||moveLock)return;
   const nx=state.px+dx,ny=state.py+dy;
+  // Bewohner ansprechen
+  const np=npcAt(nx,ny);
+  if(np){talkTo(np);return;}
   const tr=trainerAt(nx,ny);
   if(tr){
+    // In der Halle der Reihe nach
+    if(state.loc==='arena'){
+      if(tr.istMeister||state.area===7&&tr.order===4){
+        const noetig=state.area===7?4:arenaCount();
+        const fertig=state.area===7
+          ? AREAS[7].trainers.slice(0,4).every(t=>isDone(t.key))
+          : arenaTrainers().every(t=>isDone(t.key));
+        if(!fertig&&!isDone(tr.key)){
+          toast('🔒 Erst müssen alle '+noetig+' Herausforderer besiegt sein.');return;
+        }
+      }else if(tr.order>0){
+        const vor=state.area===7?ligaTrainers()[tr.order-1]:arenaTrainers()[tr.order-1];
+        if(vor&&!isDone(vor.key)){
+          toast('🔒 '+(vor.name||'Der vorige Gegner')+' ist noch nicht besiegt.');return;
+        }
+      }
+    }
     if(!isDone(tr.key)){startTrainerBattle(tr);return;}
     if(tr.kind!=='boss'){startTrainerBattle(tr,true);return;}
     toast(tr.name+': "Ich brauche eine Pause – komm später wieder."');return;
   }
-  const LG=activeLegend();
+  const LG=activeLegend2();
   if(LG&&LG.pos[0]===nx&&LG.pos[1]===ny){startLegendBattle(LG);return;}
-  if(isGate(nx,ny)){onGate();return;}
-  if(isReturnGate(nx,ny)){goBack();return;}
-  if(tileAt(nx,ny)==='H'){openShop();return;}
+  const zt=tileAt(nx,ny);
+  if(zt==='N'){nordAusgang();return;}
+  if(zt==='S'){suedAusgang();return;}
+  if(zt==='H'){openShop();return;}
+  if(zt==='A'){
+    gotoLoc('arena',state.area,[10,15],'⚔️ '+ARENA_NAMES[state.area]+
+      (state.area===7?' · fünf Meister ohne Pause':' · '+arenaCount()+' Herausforderer, dann der Meister'));
+    return;
+  }
+  if(zt==='D'){
+    gotoLoc('stadt',state.area,[CITY_DOOR_A[0],CITY_DOOR_A[1]+1],'◀ '+CITY_NAMES[state.area]);
+    return;
+  }
   if(isBlocked(nx,ny))return;
   moveLock=true;
   wfx.anim={fx:state.px,fy:state.py,tx:nx,ty:ny,k:0};
   state.px=nx;state.py=ny;
   checkFind(nx,ny);
   await wait(130);
-  if(tileAt(nx,ny)===','&&Math.random()<.2){startWildBattle();moveLock=false;return;}
+  if(state.loc==='route'&&tileAt(nx,ny)===','&&Math.random()<.2){startWildBattle();moveLock=false;return;}
   moveLock=false;
 }
-// Rückweg: am unteren Kartenrand nahe dem Startpunkt
-function isReturnGate(x,y){
-  const mp=areaMap();
-  return state.area>0 && y>=mp.rows.length-1 && Math.abs(x-mp.spawn[0])<=1;
-}
-function goBack(){
-  state.area--;
-  const mp=areaMap();
-  state.px=mp.spawn[0];state.py=Math.max(1,mp.spawn[1]-1);
-  healAll();saveGame(true);enterWorld();
-  toast('◀ Zurück in Gebiet '+(state.area+1)+': '+areaDef().name+
-    '<br><span style="opacity:.8">Das Level-Limit dieses Gebiets gilt wieder.</span>',3400);
-}
-function onGate(){
-  if(!bossCleared()){
-    toast(state.area<7?'🔒 Das Tor ist verschlossen. Besiege zuerst den Gebiets-Boss!':'🔒 Besiege erst alle 5 Meister der Liga!');
-    return;
+const NPC_PALS=[
+ {B:'#a86a4a',F:'#f0c9a0',K:'#2b1d16',R:'#7fa8d0',J:'#4a5a70'},
+ {B:'#d0a03c',F:'#e3b184',K:'#2b1d16',R:'#c94f6d',J:'#5c5470'},
+ {B:'#5a9a6a',F:'#f0c9a0',K:'#2b1d16',R:'#e8c93c',J:'#3e4a52'},
+ {B:'#8a6ab0',F:'#e3b184',K:'#2b1d16',R:'#f0e0d0',J:'#4a4058'},
+ {B:'#c05a5a',F:'#f0c9a0',K:'#2b1d16',R:'#6a8ab0',J:'#544a44'},
+ {B:'#4a8ab0',F:'#e3b184',K:'#2b1d16',R:'#d0c0a0',J:'#3a4450'}
+];
+// Gespräch mit einem Bewohner
+let dialogAktiv=false;
+function talkTo(np){
+  if(dialogAktiv)return;
+  dialogAktiv=true;
+  const key=state.area+'-'+np.idx;
+  state.npcGifts=state.npcGifts||[];
+  const zeilen=np.t.slice();
+  let geschenkText=null;
+  if(np.gift&&state.npcGifts.indexOf(key)<0){
+    state.npcGifts.push(key);
+    addItem(np.gift,np.n2||1);
+    const it=ITEMS[np.gift];
+    geschenkText=`🎁 Du erhältst <b>${it.name}</b>${(np.n2||1)>1?' ×'+np.n2:''}!`;
+    saveGame(true);
   }
-  if(state.area<7){
-    state.area++;const mp=areaMap();
-    state.px=mp.spawn[0];state.py=mp.spawn[1];healAll();
-    saveGame(true);enterWorld();
-    toast('🚪 Gebiet '+(state.area+1)+': '+areaDef().name+'! (Level-Limit '+areaDef().cap+')',3400);
-    if(storageBroken||!hasStorage)setTimeout(()=>toast('💡 Sichere deinen Fortschritt im MENÜ über 📋 Code.',3400),3600);
-  }else championEnding();
+  let i=0;
+  const box=$('npcBox'),txt=$('npcText'),nam=$('npcName'),btn=$('npcNext');
+  nam.textContent=np.n;
+  function zeige(){
+    if(i<zeilen.length){txt.innerHTML=zeilen[i];btn.textContent=(i===zeilen.length-1&&!geschenkText)?'Schließen':'Weiter ▶';}
+    else{txt.innerHTML=geschenkText;btn.textContent='Schließen';}
+    i++;
+  }
+  btn.onclick=()=>{
+    if(i>zeilen.length||(i===zeilen.length&&!geschenkText)){
+      box.classList.add('hidden');dialogAktiv=false;return;
+    }
+    zeige();
+  };
+  box.classList.remove('hidden');
+  zeige();
 }
+// Ortswechsel
+function gotoLoc(loc,area,pos,hinweis){
+  state.loc=loc;state.area=area;
+  state.px=pos[0];state.py=pos[1];
+  state.healed=false;wfx.anim=null;
+  saveGame(true);enterWorld();
+  if(hinweis)toast(hinweis,3200);
+}
+function nordAusgang(){
+  if(state.loc==='stadt'){
+    gotoLoc('route',state.area,SPAWN_SUED,
+      '🛤️ Route '+(state.area+1)+' – hier warten Trainer und wilde Kryptiden.');
+  }else if(state.loc==='route'){
+    if(!arenaCleared(state.area)){
+      toast('🔒 Der Weg zur nächsten Stadt ist gesperrt.<br>'+
+        '<span style="opacity:.85">Bezwinge zuerst die '+ARENA_NAMES[state.area]+' in '+CITY_NAMES[state.area]+'.</span>',3600);
+      return;
+    }
+    if(state.area>=7){championEnding();return;}
+    healAll();
+    gotoLoc('stadt',state.area+1,SPAWN_SUED,
+      '🏘️ '+CITY_NAMES[state.area+1]+' · Gebiet '+(state.area+2)+' (Limit Lv.'+AREA_DEFS[state.area+1].cap+')');
+  }
+}
+function suedAusgang(){
+  if(state.loc==='stadt'){
+    if(state.area<=0){toast('Hier beginnt deine Reise – südlich geht es nicht weiter.');return;}
+    gotoLoc('route',state.area-1,SPAWN_NORD,'◀ Zurück auf Route '+state.area);
+  }else if(state.loc==='route'){
+    gotoLoc('stadt',state.area,SPAWN_NORD,'◀ Zurück in '+CITY_NAMES[state.area]);
+  }
+}
+function onGate(){nordAusgang();}
 function championEnding(){
   state.champion=true;saveGame(true);showScreen('world');
   const W=VW*TILE,H=VH*TILE;
@@ -1679,7 +2004,7 @@ function stageMult(s){return s>=0?1+.5*s:1/(1+.5*Math.abs(s));}
 function effAtk(m){return m.atk*stageMult(m.stAtk||0)*(m.status==='brand'?.7:1);}
 function effDef(m){return m.def*stageMult(m.stDef||0);}
 function effSpd(m){
-  let v=m.spd*(m.status==='laehmung'?.5:1);
+  let v=m.spd*stageMult(m.stSpd||0)*(m.status==='laehmung'?.5:1);
   if(hasAbil(m,'flink'))v*=1.25;
   if(hasAbil(m,'sturmherz'))v*=1.35;
   if(hasAbil(m,'drachenmut'))v*=1.2;
@@ -1763,61 +2088,135 @@ function renderActions(){
   const b=state.battle;if(!b)return;
   const p=b.double?(selectorMon()||lead()):lead();
   const mv=mMoves(p);
-  for(let i=0;i<4;i++){
-    const btn=$('btnMove'+i);
-    if(i<mv.length){
-      btn.classList.remove('hidden');
-      const m=mv[i];
-      const ap=apOf(p,i),apMax=maxAPof(p,i);
-      const kraft=m.power>0?'St.'+m.power:'Effekt';
-      const acc=moveAcc(m);
-      btn.innerHTML=m.name+'<span class="mv-sub">'+m.type+' · '+kraft+
-        (acc<100?' · '+acc+'%':'')+' · AP '+ap+'/'+apMax+'</span>';
-      btn.style.background=TYPE_COLORS[m.type];btn.style.boxShadow='0 3px 0 rgba(0,0,0,.32)';
-      btn.disabled=false;
-      if(ap<=0){btn.style.background='#8a8298';btn.disabled=true;}
-    }else btn.classList.add('hidden');
-  }
-  $('btnCatch').innerHTML='🔴 Fangen ('+ballCount()+')';
+  // Kampf-Knopf zeigt, wie viele Attacken noch AP haben
+  const frei=mv.filter((m,i)=>apOf(p,i)>0).length;
+  $('btnFight').innerHTML='⚔️ Kampf<span class="mv-sub">'+
+    (b.double?mName(p)+' · ':'')+frei+' von '+mv.length+' Attacken bereit</span>';
+  $('btnFight').style.background=TYPE_COLORS[mType(p)];
+  $('btnFight').style.boxShadow='0 3px 0 rgba(0,0,0,.32)';
+  // Drei Aktionen: Beutel · Team · Flucht (bzw. Auswahl zurück)
+  const beutelLeer=Object.keys(state.bag).filter(k=>{
+    const it=ITEMS[k];if(!it||state.bag[k]<=0)return false;
+    if(it.kind==='held'||it.kind==='scroll')return false;
+    if(it.kind==='ball')return !b.double&&b.kind==='wild';
+    return true;
+  }).length===0;
+  $('btnBag').innerHTML='🎒 Beutel';
+  $('btnBag').disabled=beutelLeer;
+  $('btnCatch').innerHTML='👥 Team';
+  $('btnCatch').disabled=false;
   if(b.double){
+    $('btnSwitch').classList.add('hidden');
+    $('btnFlee').classList.remove('hidden');
+    $('btnFlee').className='secondary';
     $('btnFlee').innerHTML='↩ Auswahl zurück';
     $('btnFlee').disabled=!(b.orders&&b.orders.length);
-    $('btnCatch').disabled=true;
-    const benchFree=state.team.some((m,k)=>m.hp>0&&b.pSlots.indexOf(k)<0);
-    $('btnSwitch').disabled=!benchFree;
-    $('btnBag').disabled=Object.keys(state.bag).filter(k=>ITEMS[k]&&ITEMS[k].kind!=='ball'&&ITEMS[k].kind!=='held').length===0;
   }else{
-    $('btnFlee').innerHTML='📋 Kryptide ansehen';
-    $('btnFlee').disabled=false;
-    $('btnCatch').disabled=b.kind!=='wild'||ballCount()<=0||(state.team.length>=6&&state.box.length>=30);
-    $('btnSwitch').disabled=state.team.filter(m=>m.hp>0).length<=1;
-    $('btnBag').disabled=Object.keys(state.bag).filter(k=>ITEMS[k]&&ITEMS[k].kind!=='ball'&&ITEMS[k].kind!=='held').length===0;
+    $('btnFlee').classList.add('hidden');
+    $('btnSwitch').classList.remove('hidden');
+    $('btnSwitch').className='secondary';
+    $('btnSwitch').innerHTML='💨 Flucht';
+    $('btnSwitch').disabled=b.kind!=='wild';
   }
 }
-// Eigene Kryptide im Kampf ansehen
-function showSelfInfo(){
-  const b=state.battle;const m=b.double?selectorMon():lead();
-  if(!m)return;
-  const g=$('actionSub');g.innerHTML='';
+// Eigene Kryptiden im Kampf ansehen – alle durchblätterbar
+function infoZeile(label,wert,zusatz){
+  return `<tr><td style="opacity:.65;padding-right:8px">${label}</td>`+
+         `<td><b>${wert}</b>${zusatz?` <span style="opacity:.7">${zusatz}</span>`:''}</td></tr>`;
+}
+function showSelfInfo(idx){
+  const b=state.battle;if(!b)return;
+  const aktiv=b.double?selectorMon():lead();
+  if(idx==null){idx=state.team.indexOf(aktiv);if(idx<0)idx=0;}
+  const m=state.team[idx];if(!m)return;
+
   const ab=abilOf(m);
-  const st=[];
-  if(m.stAtk)st.push('Angriff '+(m.stAtk>0?'+':'')+m.stAtk);
-  if(m.stDef)st.push('Verteidigung '+(m.stDef>0?'+':'')+m.stDef);
-  if(m.stSpd)st.push('Initiative '+(m.stSpd>0?'+':'')+m.stSpd);
-  setMsg(`<b>${mName(m)}</b> ${typeBadges(m)} Lv.${m.level}<br>`+
-    `KP ${Math.max(0,m.hp)}/${m.maxHp} · ANG ${Math.round(effAtk(m))} · VER ${Math.round(effDef(m))} · INI ${Math.round(effSpd(m))}<br>`+
-    (ab?`<b>${ABILITIES[ab].name}</b>: ${ABILITIES[ab].desc}<br>`:'')+
-    (m.held&&ITEMS[m.held]?`🎽 ${ITEMS[m.held].name}<br>`:'')+
-    (m.status?`${STATUS[m.status].icon} ${STATUS[m.status].name}<br>`:'')+
-    (st.length?`<span style="opacity:.8">Veränderungen: ${st.join(' · ')}</span>`:'<span style="opacity:.6">Keine Werteveränderungen</span>'));
-  mMoves(m).forEach((mo,i)=>{
+  const stg=v=>v>0?`+${v}`:`${v}`;
+  const mod=[];
+  if(m.stAtk)mod.push('ANG '+stg(m.stAtk));
+  if(m.stDef)mod.push('VER '+stg(m.stDef));
+  if(m.stSpd)mod.push('INI '+stg(m.stSpd));
+  const pct=Math.max(0,m.hp/m.maxHp);
+  const col=pct<=.2?'#d95b43':pct<=.5?'#e8b93c':'#5aa464';
+
+  const attacken=mMoves(m).map((mo,i)=>{
+    const ap=apOf(m,i),apMax=maxAPof(m,i);
+    const leer=ap<=0;
+    return `<div style="display:flex;align-items:center;gap:5px;margin-top:3px;${leer?'opacity:.45':''}">
+      <span class="badge" style="background:${TYPE_COLORS[mo.type]};min-width:74px;text-align:center">${mo.name}</span>
+      <span style="font-size:10px;opacity:.8;flex:1">${mo.power?'St. '+mo.power:'Effekt'} · ${moveAcc(mo)}% · AP ${ap}/${apMax}</span>
+    </div>`;
+  }).join('');
+
+  setMsg(
+    `<div style="display:flex;align-items:baseline;gap:6px;flex-wrap:wrap">
+       <b style="font-size:13px">${mName(m)}</b> ${typeBadges(m)}
+       <span style="opacity:.75">Lv.${m.level}</span>
+       ${m===aktiv?'<span class="badge" style="background:#c94f6d">im Kampf</span>':''}
+       ${m.hp<=0?'<span class="badge" style="background:#8a8298">kampfunfähig</span>':''}
+       ${m.status?`<span class="badge" style="background:${STATUS[m.status].color}">${STATUS[m.status].icon} ${STATUS[m.status].name}</span>`:''}
+     </div>
+     <div class="hp-bar" style="max-width:none;margin-top:4px"><div style="height:100%;width:${pct*100}%;background:${col}"></div></div>
+     <div style="font-size:10.5px;opacity:.8">${Math.max(0,m.hp)}/${m.maxHp} KP</div>
+     <table style="font-size:10.5px;margin-top:4px;line-height:1.5">
+       ${infoZeile('Angriff',Math.round(effAtk(m)),m.stAtk?'(Basis '+m.atk+')':'')}
+       ${infoZeile('Verteidigung',Math.round(effDef(m)),m.stDef?'(Basis '+m.def+')':'')}
+       ${infoZeile('Initiative',Math.round(effSpd(m)),m.stSpd||m.status==='laehmung'?'(Basis '+m.spd+')':'')}
+     </table>
+     <div style="font-size:10.5px;margin-top:4px;line-height:1.5">
+       ${ab?`<b>${ABILITIES[ab].name}</b> <span style="opacity:.75">– ${ABILITIES[ab].desc}</span><br>`:''}
+       ${m.held&&ITEMS[m.held]?`🎽 <b>${ITEMS[m.held].name}</b> <span style="opacity:.75">– ${ITEMS[m.held].desc}</span><br>`:''}
+       ${mod.length?`<span style="color:#c94f6d"><b>Veränderungen: ${mod.join(' · ')}</b></span>`:'<span style="opacity:.6">Keine Werteveränderungen</span>'}
+     </div>
+     ${attacken}`);
+
+  // Auswahl: ein Knopf je Teammitglied
+  const g=$('actionSub');g.innerHTML='';
+  state.team.forEach((mm,i)=>{
     const btn=document.createElement('button');
-    btn.style.background=TYPE_COLORS[mo.type];
-    btn.innerHTML=mo.name+'<span class="mv-sub">'+moveDesc(mo)+' · AP '+apOf(m,i)+'/'+maxAPof(m,i)+'</span>';
-    btn.onclick=()=>{};
+    const p2=Math.max(0,mm.hp/mm.maxHp);
+    btn.innerHTML=mName(mm)+'<span class="mv-sub">Lv'+mm.level+' · '+Math.max(0,mm.hp)+'/'+mm.maxHp+' KP '+statusIcon(mm)+'</span>';
+    if(i===idx){btn.style.background=TYPE_COLORS[mType(mm)];btn.style.boxShadow='0 3px 0 rgba(0,0,0,.35)';}
+    else{btn.className='secondary';}
+    if(mm.hp<=0)btn.style.opacity='.55';
+    btn.onclick=()=>showSelfInfo(i);
     g.appendChild(btn);
   });
-  const c=document.createElement('button');c.className='secondary span2';c.textContent='◀ Zurück';
+  // Einwechseln, wenn sinnvoll
+  const aktivListe=b.double?b.pSlots.map(k=>state.team[k]):[lead()];
+  const istAktiv=aktivListe.indexOf(m)>=0;
+  if(!istAktiv&&m.hp>0){
+    const w=document.createElement('button');
+    w.className='span2';
+    w.style.background=TYPE_COLORS[mType(m)];
+    w.innerHTML='🔄 '+mName(m)+' einwechseln<span class="mv-sub">kostet diesen Zug</span>';
+    w.onclick=()=>{
+      if(b.double){
+        const slot=b.pSlots.indexOf(state.team.indexOf(selectorMon()));
+        if(slot<0)return;
+        b.pSlots[slot]=idx;resetStages(m);m._disp=m.hp;
+        b.orders.push({m,move:null,target:null});
+        setMsg(`Los, <b>${mName(m)}</b>!`);
+        setTimeout(promptNext,600);
+      }else{
+        state.leadIdx=idx;resetStages(m);fx.dispP=m.hp;fx.dispXp=m.xp;
+        doRound({type:'switch',run:async()=>{
+          setMsg(`Los, <b>${mName(m)}</b>!`);await readPause();return true;}});
+      }
+    };
+    g.appendChild(w);
+  }else if(istAktiv){
+    const hin=document.createElement('button');
+    hin.className='secondary span2';hin.disabled=true;
+    hin.innerHTML='steht bereits im Kampf';
+    g.appendChild(hin);
+  }else{
+    const hin=document.createElement('button');
+    hin.className='secondary span2';hin.disabled=true;
+    hin.innerHTML='kampfunfähig – kann nicht kämpfen';
+    g.appendChild(hin);
+  }
+  const c=document.createElement('button');c.className='secondary span2';c.textContent='◀ Zurück zum Kampf';
   c.onclick=()=>{setActions('main');if(b.double)promptNext();};
   g.appendChild(c);
   setActions('sub');
@@ -1914,9 +2313,10 @@ async function applyMove(att,def,move,attIsPlayer,slot){
   }
   let txt=`<b>${an}</b> setzt <b>${move.name}</b> ein!`;
   if(move.kind==='buff'){
-    const key=move.stat==='atk'?'stAtk':'stDef';
+    const key=move.stat==='atk'?'stAtk':move.stat==='def'?'stDef':'stSpd';
+    const lbl=move.stat==='atk'?'Angriff':move.stat==='def'?'Verteidigung':'Initiative';
     att[key]=Math.min(3,(att[key]||0)+move.stages);
-    txt+=`<br>${move.stat==='atk'?'Angriff':'Verteidigung'} steigt!`;
+    txt+=`<br>${lbl} steigt!`;
     setMsg(txt);drawBattle();await readPause();return{};
   }
   if(move.kind==='heal'){
@@ -1999,7 +2399,7 @@ function aiChooseIdx(e,p){
     let sc;
     if(m.kind==='dmg'){const{dmg}=calcDamage(e,m,p);sc=dmg*(m.drain?1.15:1);}
     else if(m.kind==='status'){sc=p.status?0:effDef(p)*.55;}
-    else if(m.kind==='heal'){sc=e.hp<e.maxHp*.35?e.maxHp*.4:0;}
+    else if(m.kind==='heal'){sc=e.hp<e.maxHp*.28?e.maxHp*.3:0;}
     else if(m.kind==='buff'){sc=(e.stAtk||0)<2&&e.hp>e.maxHp*.5?effAtk(e)*.4:0;}
     else if(m.kind==='debuff'){sc=(p.stAtk||0)>-2?effAtk(p)*.35:0;}
     else sc=0;
@@ -2214,7 +2614,10 @@ function shareXp(xp,active,only){
       const need=m.xpNext-m.xp;
       if(rest<need){m.xp+=rest;rest=0;break;}
       rest-=need;m.level++;m.xp=0;m.xpNext=m.level*45;ups++;
-      const before=m.maxHp;refreshStats(m);m.hp+=Math.max(0,m.maxHp-before);
+      const before=m.maxHp,warOhnmaechtig=m.hp<=0;
+      refreshStats(m);
+      if(warOhnmaechtig)m.hp=0;                       // bleibt kampfunfähig
+      else m.hp=Math.min(m.maxHp,m.hp+Math.max(0,m.maxHp-before));
       // Attacken automatisch lernen, solange Platz ist
       (LEARNSETS[FAMILY_OF[m.id]]||[]).forEach(pair=>{
         if(pair[0]===m.level&&m.moves.indexOf(pair[1])<0){
@@ -2257,13 +2660,6 @@ async function grantXp(p,xp,quiet){
     fx.texts.push({x:lp.x,y:lp.y,txt:'LEVEL '+p.level,col:'#7fe0a0',life:1.4,size:14});
     fx.flash=.4;fx.flashCol='140,240,180';
     setMsg(`<b>${mName(p)}</b> erreicht Level ${p.level}! 💪`);await readPause();
-    // Ein kampfunfähiges Teammitglied erholt sich beim Aufstieg
-    const ohnmacht=state.team.find(m=>m.hp<=0);
-    if(ohnmacht){
-      ohnmacht.hp=Math.max(1,Math.floor(ohnmacht.maxHp*.25));
-      setMsg(`✨ Die Kraft des Aufstiegs weckt <b>${mName(ohnmacht)}</b> wieder!`);
-      await readPause();
-    }
     await learnAtLevel(p);
     // Entwicklung wird für den Kampfabschluss vorgemerkt
     if(DEX[p.id].evo&&p.level>=DEX[p.id].evoLvl&&state.pendingEvo.indexOf(p)<0){
@@ -2387,7 +2783,7 @@ function chooseDoubleMove(i){
     g.appendChild(btn);
   });
   const c=document.createElement('button');c.className='secondary span2';c.textContent='◀ Andere Attacke';
-  c.onclick=()=>promptNext();
+  c.onclick=()=>showMoves();
   g.appendChild(c);
   setActions('sub');
 }
@@ -2525,7 +2921,7 @@ async function resolveFaints(){
     b.over=true;
     setMsg('Dein ganzes Team ist erschöpft... Du wachst im Rasthaus auf.');
     healAll();
-    const h=areaMap().house;state.px=h[0];state.py=h[1]+1;
+    state.loc='stadt';state.px=CITY_DOOR_H[0];state.py=CITY_DOOR_H[1]+1;
     const lost=Math.floor(state.money*.15);state.money-=lost;
     await wait(900);
     setMsg(`Dein Team wurde geheilt. (💰 -${lost} Münzen für die Pflege)`);
@@ -2579,7 +2975,7 @@ async function playerFaint(){
   if(state.team.filter(m=>m.hp>0).length===0){
     setMsg('Dein ganzes Team ist erschöpft... Du wachst im Rasthaus auf.');
     healAll();
-    const h=areaMap().house;state.px=h[0];state.py=h[1]+1;
+    state.loc='stadt';state.px=CITY_DOOR_H[0];state.py=CITY_DOOR_H[1]+1;
     const lost=Math.floor(state.money*.15);state.money-=lost;
     b.over=true;
     await wait(600);
@@ -2610,19 +3006,59 @@ function showSwitch(forced){
   setActions('sub');
 }
 
-function showBag(inBattle){
+// Attackenauswahl
+function showMoves(){
+  const b=state.battle;if(!b)return;
+  const p=b.double?(selectorMon()||lead()):lead();
+  const mv=mMoves(p);
   const g=$('actionSub');g.innerHTML='';
-  const keys=Object.keys(state.bag).filter(k=>ITEMS[k]&&ITEMS[k].kind!=='held'&&ITEMS[k].kind!=='scroll'&&(inBattle?ITEMS[k].kind!=='ball':true)&&state.bag[k]>0);
-  if(!keys.length){setMsg('Dein Beutel ist leer.');}
-  keys.forEach(k=>{
-    const it=ITEMS[k],btn=document.createElement('button');
-    btn.innerHTML=it.name+' ×'+state.bag[k]+'<span class="mv-sub">'+it.desc+'</span>';
-    btn.onclick=()=>useItem(k);
+  setMsg(b.double
+    ? `Welche Attacke soll <b>${mName(p)}</b> einsetzen?`
+    : `Welche Attacke soll <b>${mName(p)}</b> einsetzen?`);
+  mv.forEach((m,i)=>{
+    const ap=apOf(p,i),apMax=maxAPof(p,i),acc=moveAcc(m);
+    const btn=document.createElement('button');
+    btn.innerHTML=m.name+'<span class="mv-sub">'+m.type+' · '+
+      (m.power>0?'St. '+m.power:'Effekt')+(acc<100?' · '+acc+'%':'')+' · AP '+ap+'/'+apMax+'</span>';
+    btn.style.background=TYPE_COLORS[m.type];
+    btn.style.boxShadow='0 3px 0 rgba(0,0,0,.32)';
+    if(ap<=0){btn.style.background='#8a8298';btn.disabled=true;}
+    btn.onclick=()=>{
+      if(b.busy||b.over)return;
+      if(b.double)return chooseDoubleMove(i);
+      doRound({type:'move',idx:i});
+    };
     g.appendChild(btn);
   });
-  const c=document.createElement('button');c.className='secondary span2';c.textContent='Zurück';
+  const c=document.createElement('button');c.className='secondary span2';c.textContent='◀ Zurück';
+  c.onclick=()=>{setActions('main');};
+  g.appendChild(c);
+  setActions('sub');
+}
+function showBag(inBattle){
+  const b=state.battle;
+  const g=$('actionSub');g.innerHTML='';
+  const fangbar=b&&b.kind==='wild'&&!b.double&&
+    !(state.team.length>=6&&state.box.length>=30);
+  const keys=Object.keys(state.bag).filter(k=>{
+    const it=ITEMS[k];if(!it||state.bag[k]<=0)return false;
+    if(it.kind==='held'||it.kind==='scroll')return false;
+    if(it.kind==='ball')return fangbar;
+    return true;
+  });
+  if(!keys.length){setMsg('Hier ist gerade nichts Brauchbares im Beutel.');}
+  else setMsg('Was möchtest du benutzen?');
+  keys.forEach(k=>{
+    const it=ITEMS[k],btn=document.createElement('button');
+    const istKugel=it.kind==='ball';
+    btn.innerHTML=(istKugel?'🔴 ':'')+it.name+' ×'+state.bag[k]+
+      '<span class="mv-sub">'+it.desc+'</span>';
+    if(istKugel){btn.style.background='#c94f6d';btn.style.boxShadow='0 3px 0 #9a3550';}
+    btn.onclick=()=>istKugel?tryCatch(k):useItem(k);
+    g.appendChild(btn);
+  });
+  const c=document.createElement('button');c.className='secondary span2';c.textContent='◀ Zurück';
   c.onclick=()=>setActions('main');g.appendChild(c);
-  if(keys.length)setMsg('Welches Item möchtest du benutzen?');
   setActions('sub');
 }
 function useItem(k){
@@ -2730,19 +3166,23 @@ function tryFlee(){
 }
 
 $('msgBox').addEventListener('click',()=>{if(skipFn)skipFn();});
-for(let i=0;i<4;i++)$('btnMove'+i).addEventListener('click',()=>{
+$('btnFight').addEventListener('click',()=>{
   const b=state.battle;if(!b||b.busy||b.over)return;
-  if(b.double)return chooseDoubleMove(i);
-  doRound({type:'move',idx:i});
+  showMoves();
 });
-$('btnCatch').addEventListener('click',()=>{const b=state.battle;if(!b||b.busy||b.over||b.kind!=='wild')return;showBalls();});
+$('btnCatch').addEventListener('click',()=>{const b=state.battle;if(!b||b.busy||b.over)return;showSelfInfo();});
 $('btnFlee').addEventListener('click',()=>{
   const b=state.battle;if(!b||b.busy||b.over)return;
   if(b.double)return undoOrder();
   showSelfInfo();
 });
-$('btnSwitch').addEventListener('click',()=>{const b=state.battle;if(!b||b.busy||b.over)return;if(b.double)return showSwitchDouble();showSwitch(false);});
+$('btnSwitch').addEventListener('click',()=>{
+  const b=state.battle;if(!b||b.busy||b.over||b.double)return;
+  if(b.kind!=='wild')return;
+  tryFlee();
+});
 $('btnBag').addEventListener('click',()=>{const b=state.battle;if(!b||b.busy||b.over)return;if(b.double)return showBagDouble();showBag(true);});
+// Der Team-Knopf ersetzt das frühere Wechseln-Menü
 
 // ============================ MENÜ ============================
 function makeCanvas(px){
@@ -2915,7 +3355,7 @@ function renderEquip(){
 function renderMenu(){
   const A=areaDef(),W=curWeather();
   $('menuHead').innerHTML=
-    `<b>Gebiet ${state.area+1}/8 · ${A.name}</b>${state.champion?' 🏆':''}<br>`+
+    `<b>${locName()}</b> · Gebiet ${state.area+1}/8${state.champion?' 🏆':''}<br>`+
     `Limit Lv.${A.cap}${W?' · '+W.icon+' '+W.name:''} · 💰 ${state.money}<br>`+
     `Team ${state.team.length}/6 · Box ${state.box.length} · Katalog ${state.caught.length}/${DEX_ORDER.length}`;
   const tab=state._tab||'team';
@@ -2949,6 +3389,45 @@ function renderMenu(){
     });
   }
   else if(tab==='bag'){
+    // Anwendung außerhalb des Kampfes
+    if(state._useItem){
+      const k=state._useItem,it=ITEMS[k];
+      const h=document.createElement('div');h.className='sect';
+      h.innerHTML=it.name.toUpperCase()+' – bei wem einsetzen?';
+      list.appendChild(h);
+      const passend=state.team.map((m,i)=>({m,i})).filter(x=>
+        it.kind==='heal'   ? (x.m.hp>0&&x.m.hp<x.m.maxHp) :
+        it.kind==='cure'   ? (x.m.hp>0&&x.m.status) :
+        it.kind==='revive' ? (x.m.hp<=0) : false);
+      if(!passend.length){
+        const p2=document.createElement('div');
+        p2.style.cssText='font-size:11px;opacity:.75;margin-bottom:6px';
+        p2.textContent=it.kind==='heal'?'Alle Kryptiden haben volle KP.':
+          it.kind==='cure'?'Niemand hat ein Statusproblem.':'Niemand ist kampfunfähig.';
+        list.appendChild(p2);
+      }
+      passend.forEach(({m,i})=>{
+        const{row,cv}=monRow(m,{onClick:()=>{
+          if(it.kind==='heal'){
+            const g2=Math.min(it.amount,m.maxHp-m.hp);m.hp+=g2;
+            saveStatus(`✓ <b>${mName(m)}</b> erhält ${g2} KP zurück.`);
+          }else if(it.kind==='cure'){
+            saveStatus(`✓ <b>${mName(m)}</b> ist von ${STATUS[m.status].name} geheilt.`);
+            m.status=null;
+          }else{
+            m.hp=Math.floor(m.maxHp/2);
+            saveStatus(`✓ <b>${mName(m)}</b> wurde wiederbelebt.`);
+          }
+          useItemCount(k);state._useItem=null;saveGame(true);renderMenu();
+        }});
+        list.appendChild(row);monCanvas(cv,m.id,m.shiny);
+      });
+      const g3=document.createElement('div');g3.className='action-grid';
+      const c=document.createElement('button');c.className='secondary span2';c.textContent='◀ Abbrechen';
+      c.onclick=()=>{state._useItem=null;renderMenu();};
+      g3.appendChild(c);list.appendChild(g3);
+      showScreen('team');return;
+    }
     const keys=Object.keys(state.bag).filter(k=>ITEMS[k]&&state.bag[k]>0);
     if(!keys.length){
       const p=document.createElement('div');
@@ -2958,16 +3437,25 @@ function renderMenu(){
     const groups=[['ball','FANGKUGELN'],['heal','HEILUNG'],['cure','HEILUNG'],
       ['revive','HEILUNG'],['held','TRAGITEMS']];
     const shown={};
-    [['FANGKUGELN',['ball']],['HEILUNG',['heal','cure','revive']],['TRAGITEMS',['held']],
+    const hinw=document.createElement('div');
+    hinw.style.cssText='font-size:10px;opacity:.65;margin-bottom:5px';
+    hinw.textContent='Tränke, Gegenmittel und Beleber lassen sich hier direkt benutzen.';
+    list.appendChild(hinw);
+    [['HEILUNG',['heal','cure','revive']],['FANGKUGELN',['ball']],['TRAGITEMS',['held']],
      ['SCHRIFTROLLEN',['scroll']]].forEach(([title,kinds])=>{
       const ks=keys.filter(k=>kinds.indexOf(ITEMS[k].kind)>=0);
       if(!ks.length)return;
       const h=document.createElement('div');h.className='sect';h.textContent=title;
       list.appendChild(h);
       ks.forEach(k=>{
-        const r=document.createElement('div');r.className='row';r.style.cursor='default';
-        r.innerHTML=`<div class="rn"><b>${ITEMS[k].name}</b> ×${state.bag[k]}<br>
-          <span style="opacity:.75">${ITEMS[k].desc}</span></div>`;
+        const it=ITEMS[k];
+        const nutzbar=['heal','cure','revive'].indexOf(it.kind)>=0;
+        const r=document.createElement('div');r.className='row';
+        if(!nutzbar)r.style.cursor='default';
+        r.innerHTML=`<div class="rn"><b>${it.name}</b> ×${state.bag[k]}<br>
+          <span style="opacity:.75">${it.desc}</span></div>`+
+          (nutzbar?'<div class="chev">›</div>':'');
+        if(nutzbar)r.onclick=()=>{state._useItem=k;renderMenu();};
         list.appendChild(r);
       });
     });
@@ -2999,7 +3487,7 @@ function renderMenu(){
   $('codeBox').classList.add('hidden');
 }
 function showMenu(){
-  state._detail=null;state._equip=null;
+  state._detail=null;state._equip=null;state._useItem=null;
   if(!state._tab||state._tab==='dex')state._tab='team';
   renderMenu();
   $('saveStatus').innerHTML='';
@@ -3073,6 +3561,7 @@ function teachMove(m,moveId,cost,scrollKey){
 }
 function openShop(){
   healAll();
+  state.px=CITY_DOOR_H[0];state.py=CITY_DOOR_H[1]+1;
   state._shopTab='pflege';state._teachMon=null;state._teachAsk=null;
   renderShop();
   showScreen('shop');
@@ -3203,7 +3692,7 @@ function renderTeacher(){
 function renderShop(){
   const tab=state._shopTab||'pflege',T=SHOP_TABS[tab];
   $('shopMoney').innerHTML=
-    `<b>⛺ Rasthaus · ${areaDef().name}</b><br>`+
+    `<b>⛺ Rasthaus · ${CITY_NAMES[state.area]}</b><br>`+
     `Dein Team wurde geheilt ✓<br>`+
     `💰 <b>${state.money}</b> Münzen`;
   document.querySelectorAll('#shopTabs button').forEach(b=>
