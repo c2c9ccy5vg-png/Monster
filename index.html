@@ -44,6 +44,21 @@
   .scroll{overflow-y:auto;}
 
   #screen-title{justify-content:center;gap:11px;text-align:center;}
+  #screen-intro{overflow:hidden;border-radius:4px;}
+  #introCanvas{position:absolute;inset:0;width:100%;height:100%;image-rendering:pixelated;cursor:pointer;}
+  #introOverlay{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;
+    pointer-events:none;text-align:center;padding:0 12px;}
+  #introTitle{font-size:34px;letter-spacing:4px;color:#f8f4e6;text-shadow:0 3px 0 #241638,0 0 22px rgba(200,170,255,.5);
+    opacity:0;transform:scale(.85);animation:introTitleIn 1.3s ease-out 1.1s forwards;}
+  #introTagline{font-size:12px;letter-spacing:1px;color:#e8e2f0;margin-top:8px;opacity:0;
+    animation:introFadeIn 1.4s ease-out 2.4s forwards;}
+  @keyframes introTitleIn{0%{opacity:0;transform:scale(.85) translateY(6px);}100%{opacity:1;transform:scale(1) translateY(0);}}
+  @keyframes introFadeIn{0%{opacity:0;}100%{opacity:.9;}}
+  #btnIntroSkip{position:absolute;left:10px;right:10px;bottom:10px;background:rgba(20,14,30,.55);
+    color:#f4f0ff;border:1px solid rgba(255,255,255,.25);font-size:10.5px;padding:7px;letter-spacing:.5px;
+    opacity:0;animation:introFadeIn 1s ease-out 2.8s forwards;box-shadow:none;}
+  #btnIntroSkip:active{transform:translateY(1px);}
+  @media(prefers-reduced-motion:reduce){#introTitle,#introTagline,#btnIntroSkip{animation:none;opacity:1;}}
   .starter-row{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;}
   .starter-card{background:#fff;border:2px solid var(--ink);border-radius:10px;padding:8px 4px;
     display:flex;flex-direction:column;align-items:center;gap:5px;cursor:pointer;}
@@ -167,7 +182,16 @@
   <div class="screen-frame">
     <div class="screen" id="screenBox">
 
-      <div id="screen-title">
+      <div id="screen-intro" style="flex:1;position:relative;padding:0;display:flex;">
+        <canvas id="introCanvas" width="352" height="352"></canvas>
+        <div id="introOverlay">
+          <h1 id="introTitle">KRYPTIDEN</h1>
+          <p id="introTagline">Irgendwo dort draußen warten sie.</p>
+        </div>
+        <button id="btnIntroSkip">Tippen zum Überspringen ▶</button>
+      </div>
+
+      <div id="screen-title" class="hidden">
         <h1>KRYPTIDEN</h1>
         <p style="font-size:12px">Wähle deinen Partner:</p>
         <div class="starter-row" id="starterRow"></div>
@@ -279,7 +303,7 @@ window.__showFatal=function(m,hard){
   var f=document.getElementById('fatal');
   if(f){f.classList.remove('hidden');f.textContent='⚠️ '+m;}
   if(hard&&!window.__booted){
-    var ids=['screen-title','screen-world','screen-battle','screen-team','screen-dex','screen-shop'];
+    var ids=['screen-intro','screen-title','screen-world','screen-battle','screen-team','screen-dex','screen-shop'];
     for(var i=0;i<ids.length;i++){var e=document.getElementById(ids[i]);if(e)e.classList.add('hidden');}
   }
 };
@@ -804,7 +828,7 @@ const heldEffect=m=>(m&&m.held&&ITEMS[m.held]&&ITEMS[m.held].kind==='held')?ITEM
 // T=Baum/Fels W=Wasser .=Gras ,=hohes Gras P=Weg H=Rasthaus G=Tor
 // K=Holzbrücke O=Stein U=Busch M=Blumenwiese V=Hügel L=Lava (neue organische Terrain-Tiles)
 const MAPS=[
- {rows:['TTTTTTTTTTTTTTTTTTTTTT','T.........GG.........T','T...VV,,,.PP.....VV..T','T.TT..,,,.PP.........T','T.TT......PP..WW..O..T','T.T...MMM.PP..WW.....T','T.....MMM.PPP.WW.....T','T.....MOM.PPP.WWWW...T','T.........PPPPPKKPW..T','T.TT.P....PP..WW.WW..T','T.TTUPM..PPP..WWWWW..T','T.T..P...PP...WW.,,,.T','T.....VV.PP...WW.,,,.T','T...TTU..PP..........T','T..,T,...PPP.........T','T..,,,...PPP.........T','T.........PP.........T','TTTTTTTTTTTTTTTTTTTTTT'],
+ {rows:['TTTTTTTTTTTTTTTTTTTTTT','T.........GG.........T','T...VV,,,.PP.....VV..T','T.TT..,,,.PP.........T','T.TT......PP..WW..O..T','T.T...MMM.PP..WW.....T','T.C...MMM.PPP.WW.....T','T.....MOM.PPP.WWWW...T','T.........PPPPPKKPW..T','T.TT.P....PP..WW.WW..T','T.TTUPM..PPP..WWWWW..T','T.T..P...PP...WW.,,,.T','T....CVV.PP...WW.,,,.T','T...TTU..PP..........T','T..,T,...PPP.........T','T..,,,...PPP.........T','T.........PP.........T','TTTTTTTTTTTTTTTTTTTTTT'],
   spawn:[10,16],trainers:[[4,4],[17,4],[5,9],[16,9],[8,13]],boss:[10,2],rival:[13,13]},
  {rows:['TTTTTTTTTTTTTTTTTTTTTT','T.........PP.........T','T.TT......PP.....TTT.T','T.TTT..,,,PP...O..TT.T','T.T....O,,PPP........T','T....U.,,,PPP..U.....T','T.........PPP...U.TT.T','T.TT..O...PP......TT.T','T.TT.....PPP.........T','T.....P..PP......T...T','T...T.P..PPPP........T','T.....P..PPPP,,,..TT.T','T.TT..M...PPP,,,..T..T','T.T..U....PP..,,.....T','T........PPP....TT...T','T...TT,,.PP..........T','T....,,,.PPS.........T','TTTTTTTTTTTTTTTTTTTTTT'],
   spawn:[10,16],trainers:[[4,4],[17,4],[6,9],[15,10],[8,13]],boss:[10,2],rival:[13,13],legend:[19,15]},
@@ -894,38 +918,70 @@ const ARENA_NAMES=['Mooshalle','Waldhalle','Küstenhalle','Steppenhalle',
 
 // ---- Bewohner: Tipps, Geschenke, Schriftrollen ----
 const NPC_DATA=[
- [{n:'Alte Marta',t:['Willkommen in Mooshain!','Im Rasthaus links wirst du geheilt – und kannst einkaufen.','Die Halle rechts prüft, ob du zum Weiterziehen bereit bist.']},
-  {n:'Junge Nele',t:['Feuer schlägt Pflanze, Wasser schlägt Feuer, Pflanze schlägt Wasser.','Merk dir das, dann gewinnst du fast jeden Kampf am Anfang.'],quest:'q0'},
-  {n:'Händler Kurt',t:['Nimm das, für den Anfang.','Wirf die Kugel erst, wenn der Gegner kaum noch Kraft hat.'],gift:'superkugel',n2:3},
-  {n:'Wanderer Ove',t:['Auf dem Weg nach Norden warten Trainer.','Sie sind stärker als das, was im Gras herumläuft.']}],
- [{n:'Förstersfrau Ida',t:['Der Wald verschluckt Geräusche – und manchmal ganze Kryptiden.','Geist-Attacken prallen an Normal-Kryptiden völlig ab. Umgekehrt genauso.']},
-  {n:'Kräutersammler Jo',t:['Hier, gegen Gift und Lähmung.','Statusprobleme verschwinden nicht von selbst im Kampf.'],gift:'gegenmittel',n2:3},
-  {n:'Schreiber Anselm',t:['Ich habe eine alte Rolle gefunden. Für dich.','Lichtlanze verfehlt niemals ihr Ziel. Das ist mehr wert, als es klingt.'],gift:'r_licht',n2:1,quest:'q1'},
-  {n:'Kind Pim',t:['Im hohen Gras verstecken sich manchmal scheue Kryptiden!','Die hauen nach zwei Runden ab. Man muss schnell sein.']}],
- [{n:'Kapitänin Wilma',t:['Bei uns regnet es fast immer.','Regen macht Wasser-Attacken stärker und Feuer schwächer. Denk dran.']},
-  {n:'Taucher Ben',t:['Krabbo ist Wasser und Stein zugleich.','Doppeltypen erben beide Schwächen – Pflanze trifft die doppelt hart.']},
-  {n:'Netzflickerin Ru',t:['Für die weite Reise.','Tragitems sind mehr wert als ein Trank. Sie wirken jede Runde.'],gift:'ueberreste',n2:1},
-  {n:'Alter Seebär',t:['Attacken haben Punkte. Sind die leer, bleibt nur ein müder Stoß.','Im Rasthaus füllen sie sich wieder auf.'],quest:'q2'}],
- [{n:'Reiterin Hanne',t:['Der Sandsturm hier stärkt Stein und schwächt Pflanze.','Wer sich auskennt, wählt sein Team danach.']},
-  {n:'Bogner Falk',t:['Elektro trifft Flug hart. Pflanze steckt es dagegen weg.','Viele glauben das Gegenteil – und verlieren.']},
-  {n:'Späherin Yun',t:['Nimm den. Er macht deine Kryptide schneller.','Wer zuerst schlägt, gewinnt oft, bevor es eng wird.'],gift:'schnellfeder',n2:1,quest:'q3'},
-  {n:'Hirte Bo',t:['Ein Kampf hat höchstens vier Attacken zur Auswahl.','Nimm nicht vier vom selben Typ. Deckung ist alles.']}],
- [{n:'Schmiedin Runa',t:['Hier, für harte Zeiten.','Ein Machtband macht jeden Angriff spürbar härter.'],gift:'machtband',n2:1,quest:'q4'},
-  {n:'Aschegräber Tom',t:['Metall-Kryptiden halten fast alles aus.','Aber Feuer und Kampf brechen ihren Panzer.']},
-  {n:'Wirtin Cara',t:['Die Halle hier verlangt mehr Herausforderer als anderswo.','Je weiter du kommst, desto länger der Weg zum Hallenmeister.']},
-  {n:'Bote Nils',t:['Man kann zurückgehen, weißt du?','Der Südausgang bringt dich auf den Weg, den du gekommen bist.']}],
- [{n:'Seherin Alma',t:['Nimm diese Rolle, Wanderer.','Sturmruf steigert die Initiative. Keine andere Attacke tut das.'],gift:'r_sturm',n2:1},
-  {n:'Moorkundiger Veit',t:['Nebel stärkt Geist und schwächt Normal.','Hier unten kämpft es sich anders als überall sonst.']},
-  {n:'Irrlicht-Jäger Ru',t:['Vergiftung frisst jede Runde an den Kräften.','Gegen zähe Gegner ist das oft besser als roher Schaden.']},
-  {n:'Grufti Odo',t:['Für die Geister unter deinen Freunden.','Aderlass saugt mehr Leben als jede andere Attacke.'],gift:'r_ader',n2:1,quest:'q5'}],
- [{n:'Bergwacht Silke',t:['Schneetreiben stärkt Eis und schwächt Pflanze.','Über den Pass kommt nur, wer vorbereitet ist.']},
-  {n:'Steinmetz Gorm',t:['Nimm den Schutzstein. Du wirst ihn brauchen.','Was danach kommt, verzeiht keine Fehler mehr.'],gift:'schutzstein',n2:1,quest:'q6'},
-  {n:'Kletterin Mai',t:['In der Halle warten fünf Herausforderer vor dem Meister.','Heil dich vorher. Es gibt keine Pause dazwischen.']},
-  {n:'Alter Wirt',t:['Hinter dem Pass liegt die Meisterstadt.','Dort endet jede Reise – so oder so.']}],
- [{n:'Torwächterin Vala',t:['Die Liga-Halle nimmt nur Meister auf.','Fünf Meister, keine Pause. Deine AP füllen sich nicht zwischendurch.']},
-  {n:'Chronist Aldo',t:['Ich schreibe auf, wer die Liga bezwingt.','Bisher ist die Liste kurz.'],quest:'q7'},
-  {n:'Heilerin Sona',t:['Nimm das. Weiter kann ich dir nicht helfen.','Ab hier zählt nur noch dein Team.'],gift:'hyperkugel',n2:5},
-  {n:'Rivale Kai',t:['Also hast du es doch bis hierher geschafft.','Ich bin vor dir dran. Aber danach... viel Glück.']}]
+ [{n:'Alte Marta',t:['Willkommen in Mooshain!','Im Rasthaus links wirst du geheilt – und kannst einkaufen.','Die Halle rechts prüft, ob du zum Weiterziehen bereit bist.'],
+   chat:['Wenn du mal Hunger hast, klopf einfach – ich hab immer Suppe auf dem Herd.','Ich lebe schon mein ganzes Leben in Mooshain. Hier ändert sich wenig, und das ist auch gut so.']},
+  {n:'Junge Nele',t:['Feuer schlägt Pflanze, Wasser schlägt Feuer, Pflanze schlägt Wasser.','Merk dir das, dann gewinnst du fast jeden Kampf am Anfang.'],quest:'q0',
+   chat:['Ich übe jeden Tag die Typen-Tabelle, bis ich sie im Schlaf kann.','Manchmal wünsche ich mir, mutiger zu sein wie du.']},
+  {n:'Händler Kurt',t:['Nimm das, für den Anfang.','Wirf die Kugel erst, wenn der Gegner kaum noch Kraft hat.'],gift:'superkugel',n2:3,
+   chat:['Ware kommt und geht, aber gute Preise bleiben.','Ich habe schon in jeder Stadt der Region gehandelt – Mooshain ist mein Lieblingsplatz.']},
+  {n:'Wanderer Ove',t:['Auf dem Weg nach Norden warten Trainer.','Sie sind stärker als das, was im Gras herumläuft.'],
+   chat:['Ich ziehe nie lange an einem Ort. Aber Mooshain hat es mir angetan.','Pack genug Tränke ein, bevor du losziehst.']}],
+ [{n:'Förstersfrau Ida',t:['Der Wald verschluckt Geräusche – und manchmal ganze Kryptiden.','Geist-Attacken prallen an Normal-Kryptiden völlig ab. Umgekehrt genauso.'],
+   chat:['Ich kenne fast jeden Baum in diesem Wald beim Namen.','Der Wald redet mit einem, wenn man lange genug zuhört.']},
+  {n:'Kräutersammler Jo',t:['Hier, gegen Gift und Lähmung.','Statusprobleme verschwinden nicht von selbst im Kampf.'],gift:'gegenmittel',n2:3,
+   chat:['Die besten Kräuter wachsen dort, wo kaum wer hinsieht.','Gegen fast alles wächst hier ein Kraut – man muss es nur finden.']},
+  {n:'Schreiber Anselm',t:['Ich habe eine alte Rolle gefunden. Für dich.','Lichtlanze verfehlt niemals ihr Ziel. Das ist mehr wert, als es klingt.'],gift:'r_licht',n2:1,quest:'q1',
+   chat:['Ich sammle jede Seite, jedes Fragment, das ich finde.','Manche Bücher sind wichtiger als ganze Bibliotheken.']},
+  {n:'Kind Pim',t:['Im hohen Gras verstecken sich manchmal scheue Kryptiden!','Die hauen nach zwei Runden ab. Man muss schnell sein.'],
+   chat:['Ich habe mal ein Spuki gesehen! Ehrlich!','Erzähl mir, wenn du was Seltenes gefangen hast, ja?']}],
+ [{n:'Kapitänin Wilma',t:['Bei uns regnet es fast immer.','Regen macht Wasser-Attacken stärker und Feuer schwächer. Denk dran.'],
+   chat:['Ich war schon in jedem Sturm auf See, den es gibt.','Ohne Regen wäre die Bucht nur halb so schön.']},
+  {n:'Taucher Ben',t:['Krabbo ist Wasser und Stein zugleich.','Doppeltypen erben beide Schwächen – Pflanze trifft die doppelt hart.'],
+   chat:['Unter Wasser ist es stiller als überall sonst.','Ich tauche am liebsten bei Sonnenaufgang, wenn noch keiner wach ist.']},
+  {n:'Netzflickerin Ru',t:['Für die weite Reise.','Tragitems sind mehr wert als ein Trank. Sie wirken jede Runde.'],gift:'ueberreste',n2:1,
+   chat:['Ein Netz zu flicken dauert länger, als man denkt – aber es lohnt sich.','Jedes Loch im Netz ist ein Fisch, der entkommt.']},
+  {n:'Alter Seebär',t:['Attacken haben Punkte. Sind die leer, bleibt nur ein müder Stoß.','Im Rasthaus füllen sie sich wieder auf.'],quest:'q2',
+   chat:['Ich erzähl die Geschichte vom Riesenwesen jedem, der stehen bleibt.','Früher war ich selbst mal so jung und ungeduldig wie du.']}],
+ [{n:'Reiterin Hanne',t:['Der Sandsturm hier stärkt Stein und schwächt Pflanze.','Wer sich auskennt, wählt sein Team danach.'],
+   chat:['Ich reite lieber gegen den Wind als mit ihm – man lernt mehr dabei.','Meine Kryptiden sind schneller als jedes Pferd.']},
+  {n:'Bogner Falk',t:['Elektro trifft Flug hart. Pflanze steckt es dagegen weg.','Viele glauben das Gegenteil – und verlieren.'],
+   chat:['Ich übe jeden Morgen, bevor die Sonne die Steppe aufheizt.','Ein guter Schuss braucht Geduld, keine Kraft.']},
+  {n:'Späherin Yun',t:['Nimm den. Er macht deine Kryptide schneller.','Wer zuerst schlägt, gewinnt oft, bevor es eng wird.'],gift:'schnellfeder',n2:1,quest:'q3',
+   chat:['Ich sehe Dinge kommen, lange bevor andere sie bemerken.','Geschwindigkeit gewinnt öfter als Stärke, glaub mir.']},
+  {n:'Hirte Bo',t:['Ein Kampf hat höchstens vier Attacken zur Auswahl.','Nimm nicht vier vom selben Typ. Deckung ist alles.'],
+   chat:['Meine Herde kennt die Steppe besser als ich.','Ruhe ist hier draußen mehr wert als Gold.']}],
+ [{n:'Schmiedin Runa',t:['Hier, für harte Zeiten.','Ein Machtband macht jeden Angriff spürbar härter.'],gift:'machtband',n2:1,quest:'q4',
+   chat:['Das Feuer in meiner Esse geht nie ganz aus.','Ich schmiede nur, was auch hält – keine halben Sachen.']},
+  {n:'Aschegräber Tom',t:['Metall-Kryptiden halten fast alles aus.','Aber Feuer und Kampf brechen ihren Panzer.'],
+   chat:['In der Asche findet man manchmal mehr, als man erwartet.','Metall-Kryptiden mag ich am liebsten – zäh wie ich.']},
+  {n:'Wirtin Cara',t:['Die Halle hier verlangt mehr Herausforderer als anderswo.','Je weiter du kommst, desto länger der Weg zum Hallenmeister.'],
+   chat:['Bei mir ist immer ein Platz frei, auch wenn es voll aussieht.','Ich habe schon so manchen müden Trainer wieder aufgepäppelt.']},
+  {n:'Bote Nils',t:['Man kann zurückgehen, weißt du?','Der Südausgang bringt dich auf den Weg, den du gekommen bist.'],
+   chat:['Ich bring Nachrichten schneller als jeder Vogel.','Der Südausgang bringt dich übrigens genau dahin zurück, wo du herkamst.']}],
+ [{n:'Seherin Alma',t:['Nimm diese Rolle, Wanderer.','Sturmruf steigert die Initiative. Keine andere Attacke tut das.'],gift:'r_sturm',n2:1,
+   chat:['Ich sehe mehr im Nebel, als mir manchmal lieb ist.','Manche Dinge sollte man nicht zu genau wissen wollen.']},
+  {n:'Moorkundiger Veit',t:['Nebel stärkt Geist und schwächt Normal.','Hier unten kämpft es sich anders als überall sonst.'],
+   chat:['Ich kenne jeden festen Weg durchs Moor – die anderen meide ich.','Der Nebel hier lügt nie, er zeigt nur nicht alles auf einmal.']},
+  {n:'Irrlicht-Jäger Ru',t:['Vergiftung frisst jede Runde an den Kräften.','Gegen zähe Gegner ist das oft besser als roher Schaden.'],
+   chat:['Ich jage die Lichter schon seit Jahren – gefangen habe ich noch keins.','Manche sagen, die Irrlichter jagen eigentlich mich.']},
+  {n:'Grufti Odo',t:['Für die Geister unter deinen Freunden.','Aderlass saugt mehr Leben als jede andere Attacke.'],gift:'r_ader',n2:1,quest:'q5',
+   chat:['Ich habe mein Leben dem Nebel gewidmet, im Guten wie im Schlechten.','Manche Geschichten sind wahrer, als man glauben will.']}],
+ [{n:'Bergwacht Silke',t:['Schneetreiben stärkt Eis und schwächt Pflanze.','Über den Pass kommt nur, wer vorbereitet ist.'],
+   chat:['Ich kenne fast jede Lawine, bevor sie kommt.','Der Pass verzeiht keine Unvorsicht, das lernt man schnell.']},
+  {n:'Steinmetz Gorm',t:['Nimm den Schutzstein. Du wirst ihn brauchen.','Was danach kommt, verzeiht keine Fehler mehr.'],gift:'schutzstein',n2:1,quest:'q6',
+   chat:['Ich schlage Stein, seit ich denken kann.','Manche Statuen hier oben sind älter als die Stadt selbst.']},
+  {n:'Kletterin Mai',t:['In der Halle warten fünf Herausforderer vor dem Meister.','Heil dich vorher. Es gibt keine Pause dazwischen.'],
+   chat:['Ich bin höher geklettert, als die meisten für möglich halten.','Der Ausblick von ganz oben ist jede Mühe wert.']},
+  {n:'Alter Wirt',t:['Hinter dem Pass liegt die Meisterstadt.','Dort endet jede Reise – so oder so.'],
+   chat:['Ich habe schon Hunderte auf dem Weg zur Meisterstadt durchziehen sehen.','Nicht alle sind zurückgekommen, um mir davon zu erzählen.']}],
+ [{n:'Torwächterin Vala',t:['Die Liga-Halle nimmt nur Meister auf.','Fünf Meister, keine Pause. Deine AP füllen sich nicht zwischendurch.'],
+   chat:['Ich habe schon viele an dieser Tür scheitern sehen.','Nur wer wirklich bereit ist, kommt an mir vorbei.']},
+  {n:'Chronist Aldo',t:['Ich schreibe auf, wer die Liga bezwingt.','Bisher ist die Liste kurz.'],quest:'q7',
+   chat:['Ich schreibe jeden Namen auf, der es hierher schafft.','Meine Liste ist kürzer, als man denken würde.']},
+  {n:'Heilerin Sona',t:['Nimm das. Weiter kann ich dir nicht helfen.','Ab hier zählt nur noch dein Team.'],gift:'hyperkugel',n2:5,
+   chat:['Ab hier heile ich niemanden mehr – das übernimmst du selbst.','Ich hoffe, dein Team ist bereit für das, was kommt.']},
+  {n:'Rivale Kai',t:['Also hast du es doch bis hierher geschafft.','Ich bin vor dir dran. Aber danach... viel Glück.'],
+   chat:['Ich hol dich noch ein, das schwöre ich dir.','Diesmal lasse ich dir keinen Vorsprung.']}]
 ];
 
 // ---- Kleine Gespräche für wiederholte Besuche: Gerüchte, Legenden, Tipps ----
@@ -1046,7 +1102,7 @@ const mMoves=m=>m.moves.map(i=>MOVES[i]).filter(Boolean);
 // ============================ ZUSTAND ============================
 const state={team:[],box:[],leadIdx:0,bag:{kugel:5,trank:2},money:600,
   seen:[],caught:[],defeated:[],rivals:[],legends:[],found:[],scrolls:[],npcGifts:[],
-  events:[],npcSeen:[],legendClues:[],quests:{},
+  events:[],npcSeen:[],legendClues:[],quests:{},sideId:null,
   pendingLearn:[],pendingEvo:[],area:0,loc:'stadt',px:10,py:15,
   champion:false,mode:'title',healed:false,battle:null,dexRewards:[]};
 
@@ -1083,7 +1139,7 @@ function readPause(extra){
 const lead=()=>state.team[state.leadIdx];
 
 function showScreen(n){
-  ['title','world','battle','team','dex','shop'].forEach(s=>$('screen-'+s).classList.toggle('hidden',s!==n));
+  ['intro','title','world','battle','team','dex','shop'].forEach(s=>$('screen-'+s).classList.toggle('hidden',s!==n));
   state.mode=n;
 }
 let toastT=null;
@@ -1210,11 +1266,11 @@ function legendFor(a){
 // ============================ NEBENQUESTS ============================
 // Manche Entwicklungen und ein neues Kryptid sind nur so zu bekommen.
 const QUESTS=[
-  {id:'q0',area:0,npcIdx:1,name:'Ein Blattli für Nele',
-   offer:'Ehrlich gesagt... ich hab nie ein eigenes Blattli gefangen. Traust du dich, eins für mich zu fangen?',
-   remind:'Hast du schon ein Blattli gefangen? Ich zähl auf dich!',
+  {id:'q0',area:0,npcIdx:1,name:'Mut zum Fangen',
+   offer:'Ehrlich gesagt... ich hab mich nie getraut, ein eigenes Blattli zu fangen. Zeig mir doch mal, dass das gar nicht so schwer ist – fang einfach eins für dich, dann glaub ich dir aufs Wort.',
+   remind:'Hast du schon dein eigenes Blattli gefangen? Zeig es mir, wenn es so weit ist!',
    check:()=>state.caught.some(id=>FAMILY_OF[id]==='blattli'),
-   complete:'Du hast wirklich eins gefangen! Hier – das hat meine Oma mir gegeben. Sie sagte, es sei für "etwas Besonderes". Vielleicht weißt du, wofür.',
+   complete:'Du hast wirklich eins gefangen – und behältst es natürlich, es ist ja deins! Aber jetzt weiß ich, dass es geht. Hier, das hat meine Oma mir gegeben. Sie sagte, es sei für "etwas Besonderes". Vielleicht weißt du, wofür.',
    reward:{money:150,item:'wurzelkristall'}},
   {id:'q1',area:1,npcIdx:2,name:'Die verlorenen Seiten',
    offer:'Ich suche seit Jahren nach den fehlenden Seiten eines uralten Buches. Man munkelt, die Wächter des Waldes bewachen sie – seine Trainer stellen jeden auf die Probe, der sich nähert.',
@@ -1225,10 +1281,10 @@ const QUESTS=[
    legendGate:true,
    reward:{money:200,item:'seelenanker'}},
   {id:'q2',area:2,npcIdx:3,name:'Das Wesen im Riff',
-   offer:'Ich erzähl jedem vom Riesenwesen im Riff – aber glauben tut mir keiner. Bring mir wenigstens ein Krabbo, dann glaub ich dir, dass du klein anfängst wie ich einst.',
+   offer:'Ich erzähl jedem vom Riesenwesen im Riff – aber glauben tut mir keiner. Fang wenigstens ein Krabbo und zeig es mir, dann glaub ich dir, dass du klein anfängst wie ich einst.',
    remind:'Schon ein Krabbo gefangen? Die Scheren erkennt man sofort.',
    check:()=>state.caught.some(id=>FAMILY_OF[id]==='krabbo'),
-   complete:'Haha, da ist es ja! Nimm das als Dank, du Glückspilz.',
+   complete:'Haha, da ist es ja! Behalt es gut, so ein Fang ist was Besonderes. Nimm das als Dank, du Glückspilz.',
    reward:{money:250,item:'schutzstein'}},
   {id:'q3',area:3,npcIdx:2,name:'Wettlauf gegen den Sturm',
    offer:'Nur die Schnellsten bestehen die Steppenhalle. Beweis es, und ich hab noch etwas für dich.',
@@ -1284,6 +1340,32 @@ function grantQuestReward(q){
   if(bits.length)toast('Belohnung: '+bits.join(' · '),3600);
   saveGame(true);
 }
+// ============================ NEBENBEREICHE ============================
+// Kleine, unregelmaessig geformte Orte, die abseits der Hauptroute liegen.
+// C=Versteckter Zugang (auf der Route) -> fuehrt in einen Nebenbereich
+const SIDE_LINK={
+  '0:2:6':'mooshain_steinkreis',
+  '0:5:12':'mooshain_hoehle'
+};
+const SIDE_AREAS={
+  mooshain_steinkreis:{
+    name:'Alter Steinkreis',parentArea:0,returnPos:[2,7],
+    rows:['TTTTTTTTTTTTTTTTTTTTTT','TTTTTTTTTTTTTTTTTTTTTT','TTTTTTTTTTTTTTTTTTTTTT','TTTTTTTT.T.....TTTTTTT','TTTTTT...........TTTTT','TTTTT...O...O.....TTTT','TTTT...........O..TTTT','TTTT...............TTT','TTTT..O..M...M.....TTT','TTTT............O...TT','TTTT..O.M.....M....TTT','TTTT......M.M......TTT','TTTT...........O..TTTT','TTTTTT..O...O....TTTTT','TTTTTT..........TTTTTT','TTTTTTTT.T.....TTTTTTT','TTTTTTTTTTTDTTTTTTTTTT','TTTTTTTTTTTTTTTTTTTTTT'],
+    spawn:[11, 15],ambient:['fog','fireflies'],
+    npcs:[{n:'Uralter Stein',kind:'stone',pos:[11, 9],
+      t:['Der Stein ist mit Runen bedeckt, die kein heutiges Alphabet kennt.',
+         'Zwischen den Zeichen erkennst du schwach die Umrisse vertrauter Kryptiden – und einiger, die dir völlig fremd sind.',
+         '"...als der Nebel sie nahm, kehrte keines zurueck..." Mehr laesst sich nicht entziffern.']}]
+  },
+  mooshain_hoehle:{
+    name:'Kleine Höhle',parentArea:0,returnPos:[5,13],
+    rows:['BBBBBBBBBBBBBBBBBBBBBB','BBBBBBBBBBBBBBBBBBBBBB','BBBBBBBBBBBBBBBBBBBBBB','BBBBBBBBBBBBBBBBBBBBBB','BBBBBBBBBFFFFFFFBBBBBB','BBBBBBBBBFFFFFFFBBBBBB','BBBBBBBBBFFFOFFFBBBBBB','BBBBBBBFFFFFFOFFBBBBBB','BBBBFFFFFFFFFFFFFFBBBB','BBBBFFFFFFFBBBFFFFBBBB','BBBBFFOFBBBBBBFFFFFFBB','BBBBFFFFBBBBBBFFFOFFBB','BBBBFFFFBBBBBBFFFFFFBB','BBBBFFFFFFBBBBBFFFFFBB','BBBBFOFFFFFFFBBBBBBBBB','BBBBFFFFFFFFFBBBBBBBBB','BBBBBBBBBFDFFBBBBBBBBB','BBBBBBBBBBBBBBBBBBBBBB'],
+    spawn:[10, 15],ambient:[],
+    pickup:{pos:[18, 11],item:'heilkraut',qty:1,
+      msg:'✨ Tief in der Höhle findest du ein wucherndes <b>Heilkraut</b> – hier drinnen bekommt es nie Sonnenlicht und ist trotzdem kerngesund.'}
+  }
+};
+
 const RIVAL_LINES=[
   ['Rivale Kai: "Da bist du ja! Mein Team ist längst weiter als deins."',
    'Rivale Kai: "Anfängerglück. Mehr war das nicht."'],
@@ -1335,7 +1417,7 @@ function snapshot(){
   return{v:6,team:state.team,box:state.box,leadIdx:state.leadIdx,bag:state.bag,money:state.money,
     seen:state.seen,caught:state.caught,defeated:state.defeated,rivals:state.rivals,
     legends:state.legends,found:state.found,scrolls:state.scrolls,npcGifts:state.npcGifts,
-    events:state.events,npcSeen:state.npcSeen,legendClues:state.legendClues,quests:state.quests,
+    events:state.events,npcSeen:state.npcSeen,legendClues:state.legendClues,quests:state.quests,sideId:state.sideId,
     area:state.area,loc:state.loc,
     px:state.px,py:state.py,champion:state.champion,starter:state.starter,dexRewards:state.dexRewards};
 }
@@ -1367,7 +1449,7 @@ function applySave(s){
   state.seen=s.seen||[];state.caught=s.caught||[];state.defeated=s.defeated||[];state.rivals=s.rivals||[];
   state.legends=s.legends||[];state.found=s.found||[];state.scrolls=s.scrolls||[];
   state.npcGifts=s.npcGifts||[];state.loc=s.loc||'stadt';state._useItem=null;
-  state.events=s.events||[];state.npcSeen=s.npcSeen||[];state.legendClues=s.legendClues||[];state.quests=s.quests||{};
+  state.events=s.events||[];state.npcSeen=s.npcSeen||[];state.legendClues=s.legendClues||[];state.quests=s.quests||{};state.sideId=s.sideId||null;
   state.pendingLearn=[];state.pendingEvo=[];state._equip=null;
   state.area=s.area||0;state.px=s.px==null?10:s.px;state.py=s.py==null?16:s.py;
   state.champion=!!s.champion;state.starter=s.starter||'flamko';state.dexRewards=s.dexRewards||[];
@@ -1423,6 +1505,68 @@ function useItemCount(id){state.bag[id]=(state.bag[id]||0)-1;if(state.bag[id]<=0
 function ballCount(){return (state.bag.kugel||0)+(state.bag.superkugel||0)+(state.bag.hyperkugel||0);}
 
 // ============================ TITEL ============================
+// ============================ INTRO ============================
+let introRaf=null,introSkipped=false;
+function finishIntro(){
+  if(introSkipped)return;
+  introSkipped=true;
+  if(introRaf)cancelAnimationFrame(introRaf);
+  showScreen('title');
+  initTitle().catch(e=>window.__showFatal&&window.__showFatal('Titel: '+(e&&e.message?e.message:e),false));
+}
+function startIntro(){
+  const cv=$('introCanvas'),ctx=cv.getContext('2d');
+  const W=352,H=352,AUTO_S=7;
+  const t0=performance.now();
+  const stars=Array.from({length:26},(_,i)=>({
+    x:h2(i,201)*W,y:h2(i,202)*H*0.55,s:1+h2(i,203)*1.6,ph:h2(i,204)*Math.PI*2}));
+  const hills=[{y:H*.62,amp:18,col:'#1c1330',speed:2},{y:H*.72,amp:24,col:'#150e26',speed:4},
+    {y:H*.84,amp:30,col:'#0e091c',speed:7}];
+  function draw(now){
+    if(introSkipped)return;
+    const t=(now-t0)/1000;
+    const g=ctx.createLinearGradient(0,0,0,H);
+    g.addColorStop(0,'#241638');g.addColorStop(.55,'#3a2a5c');g.addColorStop(1,'#6a4a7c');
+    ctx.fillStyle=g;ctx.fillRect(0,0,W,H);
+    stars.forEach(s=>{
+      const pulse=Math.sin(t*1.6+s.ph)*.5+.5;
+      ctx.fillStyle='rgba(240,232,255,'+(.25+pulse*.55)+')';
+      ctx.beginPath();ctx.arc(s.x,s.y,s.s,0,Math.PI*2);ctx.fill();
+    });
+    hills.forEach((h,hi)=>{
+      ctx.fillStyle=h.col;
+      ctx.beginPath();ctx.moveTo(0,H);
+      const off=(t*h.speed)%40;
+      for(let x=-40;x<=W+40;x+=20){
+        const yy=h.y+Math.sin((x+off)*.02+hi)*h.amp*.3+Math.sin((x+off)*.008)*h.amp;
+        ctx.lineTo(x,yy);
+      }
+      ctx.lineTo(W,H);ctx.closePath();ctx.fill();
+    });
+    for(let i=0;i<4;i++){
+      const y=H*.58+i*14+Math.sin(t*.3+i)*6;
+      const x=((h2(i,210)*W)+t*(8+i*3))%(W+180)-90;
+      const grad=ctx.createRadialGradient(x,y,10,x,y,120);
+      grad.addColorStop(0,'rgba(225,220,240,.18)');grad.addColorStop(1,'rgba(225,220,240,0)');
+      ctx.fillStyle=grad;ctx.fillRect(x-120,y-60,240,120);
+    }
+    // Ein rätselhaftes Wesen huscht einmal als Silhouette über den Horizont
+    if(t>1.6&&t<6.3){
+      const walkT=(t-1.6)/4.7;
+      const sx=-30+walkT*(W+60),sy=H*.7,bob=Math.sin(t*8)*2;
+      ctx.save();
+      ctx.globalAlpha=Math.min(1,Math.min(t-1.6,6.3-t)*1.5);
+      ctx.filter='brightness(0)';
+      paintMon(ctx,'silvarion',sx-10,sy-16+bob,1.7,walkT>0.5,false);
+      ctx.restore();
+    }
+    if(t>=AUTO_S){finishIntro();return;}
+    introRaf=requestAnimationFrame(draw);
+  }
+  introRaf=requestAnimationFrame(draw);
+  cv.addEventListener('click',finishIntro);
+  $('btnIntroSkip').addEventListener('click',e=>{e.stopPropagation();finishIntro();});
+}
 async function initTitle(){
   const row=$('starterRow');row.innerHTML='';
   STARTERS.forEach(id=>{
@@ -1465,11 +1609,13 @@ const wctx=$('worldCanvas').getContext('2d');
 function locRows(){
   if(state.loc==='stadt')return CITY_DEFS[state.area].rows;
   if(state.loc==='arena')return ARENA_DEFS[state.area].rows;
+  if(state.loc==='side')return SIDE_AREAS[state.sideId].rows;
   return ROUTES[state.area].rows;
 }
 function locName(){
   if(state.loc==='stadt')return CITY_NAMES[state.area];
   if(state.loc==='arena')return ARENA_NAMES[state.area];
+  if(state.loc==='side')return SIDE_AREAS[state.sideId].name;
   return 'Route '+(state.area+1);
 }
 const tileAt=(x,y)=>{const m=locRows();return(x<0||y<0||y>=m.length||x>=m[0].length)?'T':m[y][x];};
@@ -1518,12 +1664,23 @@ function hierTrainers(){
 }
 function trainerAt(x,y){return hierTrainers().find(t=>t.pos&&t.pos[0]===x&&t.pos[1]===y);}
 function npcAt(x,y){
-  if(state.loc!=='stadt')return null;
-  const liste=NPC_DATA[state.area]||[];
-  const posArr=CITY_DEFS[state.area].npcs;
-  for(let i=0;i<liste.length;i++){
-    const p=posArr[i];
-    if(p&&p[0]===x&&p[1]===y)return Object.assign({},liste[i],{idx:i});
+  if(state.loc==='stadt'){
+    const liste=NPC_DATA[state.area]||[];
+    const posArr=CITY_DEFS[state.area].npcs;
+    for(let i=0;i<liste.length;i++){
+      const p=posArr[i];
+      if(p&&p[0]===x&&p[1]===y)return Object.assign({},liste[i],{idx:i});
+    }
+    return null;
+  }
+  if(state.loc==='side'){
+    const sa=SIDE_AREAS[state.sideId];
+    const liste=(sa&&sa.npcs)||[];
+    for(let i=0;i<liste.length;i++){
+      const p=liste[i].pos;
+      if(p&&p[0]===x&&p[1]===y)return Object.assign({},liste[i],{idx:i,key:'side-'+state.sideId+'-'+i});
+    }
+    return null;
   }
   return null;
 }
@@ -1668,6 +1825,16 @@ function drawTile(t,sx,sy,gx,gy){
       wctx.beginPath();wctx.arc(sx+8+sway,sy+7,4.8,0,Math.PI*2);wctx.fill();
       wctx.fillStyle=shade(S.tree,.75);
       wctx.beginPath();wctx.arc(sx+14+sway,sy+12,3.4,0,Math.PI*2);wctx.fill();
+      break;}
+    case 'C':{   // Versteckter Zugang zu einem Nebenbereich
+      wctx.fillStyle=base;wctx.fillRect(sx,sy,TILE+1,TILE+1);
+      wctx.fillStyle='rgba(20,14,20,.5)';
+      wctx.beginPath();wctx.ellipse(sx+11,sy+14,7,7,0,Math.PI,0,true);wctx.fill();
+      wctx.fillStyle='#181220';
+      wctx.beginPath();wctx.ellipse(sx+11,sy+15,4,5.5,0,Math.PI,0,true);wctx.fill();
+      wctx.fillStyle=shade(S.tree,1.05);
+      wctx.beginPath();wctx.arc(sx+4,sy+15,4,0,Math.PI*2);wctx.fill();
+      wctx.beginPath();wctx.arc(sx+18,sy+14,4.4,0,Math.PI*2);wctx.fill();
       break;}
     case 'K':{   // Holzbrücke (über Wasser)
       wctx.fillStyle=S.water;wctx.fillRect(sx,sy,TILE+1,TILE+1);
@@ -1979,6 +2146,26 @@ function drawWorld(){
         wctx.fillStyle='#7fe0a0';wctx.fillRect(sx+8,sy-7+pulse,6,4);
       }
     });
+  }else if(state.loc==='side'){
+    const sa=SIDE_AREAS[state.sideId];
+    ((sa&&sa.npcs)||[]).forEach((np,i)=>{
+      const p2=np.pos;if(!p2)return;
+      const sx=Math.round((p2[0]-camX)*TILE),sy=Math.round((p2[1]-camY)*TILE);
+      if(sx<-TILE*2||sy<-TILE*2||sx>VW*TILE+TILE||sy>VH*TILE+TILE)return;
+      if(np.kind==='stone'){
+        wctx.fillStyle='rgba(20,14,30,.25)';
+        wctx.beginPath();wctx.ellipse(sx+11,sy+19,8,3,0,0,Math.PI*2);wctx.fill();
+        wctx.fillStyle='#6a6258';
+        wctx.beginPath();wctx.moveTo(sx+6,sy+20);wctx.lineTo(sx+7,sy+2);wctx.lineTo(sx+15,sy+2);wctx.lineTo(sx+16,sy+20);wctx.closePath();wctx.fill();
+        wctx.fillStyle='#8a8276';wctx.fillRect(sx+8,sy+4,3,14);
+        const pulse=Math.sin(wfx.t*1.6)*.5+.5;
+        wctx.fillStyle='rgba(160,200,255,'+(.25+pulse*.4)+')';
+        wctx.fillRect(sx+9,sy+8,4,2);wctx.fillRect(sx+9,sy+13,4,2);
+      }else{
+        const bob=Math.sin(wfx.t*1.5+i)*.8;
+        paintHuman(wctx,NPC_PALS[i%NPC_PALS.length],sx-1,sy-1+bob,2);
+      }
+    });
   }
   // Legendäres Monster auf der Karte
   const LG=activeLegend2();
@@ -1997,7 +2184,7 @@ function drawWorld(){
   // Spieler mit Schrittwippen
   const walking=!!wfx.anim;
   const stepBob=walking?Math.abs(Math.sin(wfx.anim.k*Math.PI))*-2:0;
-  drawSighting();
+  drawSighting(camX,camY);
   paintHuman(wctx,HERO_PAL,Math.round((ppx-camX)*TILE)-1,Math.round((ppy-camY)*TILE)-1+stepBob,2);
   // Natur-Ambiente (Regen, Schnee, Nebel, Blätter, Lichtstrahlen, Glühwürmchen...)
   drawAmbient(camX*TILE,camY*TILE);
@@ -2129,6 +2316,21 @@ function checkRandomEvent(x,y){
   for(const e of pool){if(pick<e.w){ev=e;break;}pick-=e.w;}
   runEvent(ev.kind,x,y);
 }
+// Fest platzierte Fundstücke in Nebenbereichen (keine Zufallschance, gezielt entdeckbar)
+function checkSidePickup(x,y){
+  if(state.loc!=='side')return;
+  const sa=SIDE_AREAS[state.sideId];
+  if(!sa||!sa.pickup)return;
+  const pu=sa.pickup;
+  if(pu.pos[0]!==x||pu.pos[1]!==y)return;
+  const key='side:'+state.sideId+':pickup';
+  state.found=state.found||[];
+  if(state.found.indexOf(key)>=0)return;
+  state.found.push(key);
+  addItem(pu.item,pu.qty||1);
+  toast(pu.msg||('✨ Du findest: <b>'+ITEMS[pu.item].name+'</b>!'),3000);
+  saveGame(true);
+}
 
 let moveLock=false;
 let arenaGateOpen=false; // Schalter/Tor-Rätsel: pro Hallenbesuch zurückgesetzt
@@ -2174,7 +2376,7 @@ function maybeSpawnSighting(){
     break;
   }
 }
-function drawSighting(){
+function drawSighting(camX,camY){
   if(!sighting)return;
   const age=performance.now()-sighting.born;
   if(age>sighting.life){sighting=null;return;}
@@ -2228,7 +2430,22 @@ async function movePlayer(dx,dy){
     return;
   }
   if(zt==='D'){
-    gotoLoc('stadt',state.area,[CITY_DEFS[state.area].doorA[0],CITY_DEFS[state.area].doorA[1]+1],'◀ '+CITY_NAMES[state.area]);
+    if(state.loc==='side'){
+      const sa=SIDE_AREAS[state.sideId],pa=sa.parentArea;
+      state.sideId=null;
+      gotoLoc('route',pa,sa.returnPos,'◀ Zurück auf der Route');
+    }else{
+      gotoLoc('stadt',state.area,[CITY_DEFS[state.area].doorA[0],CITY_DEFS[state.area].doorA[1]+1],'◀ '+CITY_NAMES[state.area]);
+    }
+    return;
+  }
+  if(zt==='C'){
+    const sideId=SIDE_LINK[state.area+':'+nx+':'+ny];
+    if(sideId){
+      const sa=SIDE_AREAS[sideId];
+      state.sideId=sideId;
+      gotoLoc('side',state.area,sa.spawn,'🌿 '+sa.name);
+    }
     return;
   }
   if(isBlocked(nx,ny))return;
@@ -2240,6 +2457,7 @@ async function movePlayer(dx,dy){
     state.px=tx;state.py=ty;
     checkFind(tx,ty);
     checkRandomEvent(tx,ty);
+    checkSidePickup(tx,ty);
     await wait(110);
     const t=tileAt(tx,ty);
     if(t==='X'){
@@ -2274,7 +2492,7 @@ let dialogAktiv=false;
 function talkTo(np){
   if(dialogAktiv)return;
   dialogAktiv=true;
-  const key=state.area+'-'+np.idx;
+  const key=np.key||(state.area+'-'+np.idx);
   state.npcGifts=state.npcGifts||[];
   state.npcSeen=state.npcSeen||[];
   state.quests=state.quests||{};
@@ -2312,15 +2530,24 @@ function talkTo(np){
       }
     }
   }
-  // Bei erneutem Besuch ohne offene Quest-Zeile: statt der immer gleichen Sätze ein frisches Gerücht/Tipp
+  // Bei erneutem Besuch ohne offene Quest-Zeile: eigene Zeilen des NPCs bevorzugt,
+  // Dorfgerüchte nur noch anteilig mischen – sonst klingen alle Bewohner gleich.
   if(wiederholung&&(!q||state.quests[q.id]==='done')){
-    const pool=(CHAT_POOLS[state.area]||[]).slice();
+    const own=(np.chat||[]).slice();
+    const shared=(CHAT_POOLS[state.area]||[]).slice();
     const rumor=LEGEND_RUMORS[state.area];
     const needClue=rumor&&LEGEND_DATA[state.area]&&legendClueCount(state.area)<LEGEND_CLUE_KINDS.length&&
       (state.legendClues||[]).indexOf(state.area+':geruecht')<0;
-    if(needClue)pool.push(rumor);
-    if(pool.length){
-      const line=pool[Math.floor(Math.random()*pool.length)];
+    if(needClue)shared.push(rumor);
+    let line=null;
+    if(own.length&&(Math.random()<.65||!shared.length)){
+      line=own[Math.floor(Math.random()*own.length)];
+    }else if(shared.length){
+      line=shared[Math.floor(Math.random()*shared.length)];
+    }else if(own.length){
+      line=own[Math.floor(Math.random()*own.length)];
+    }
+    if(line){
       zeilen=[line];
       if(needClue&&line===rumor)grantLegendClue(state.area,'geruecht','📖 Ein neues Gerücht macht die Runde...');
     }
@@ -4571,7 +4798,7 @@ document.addEventListener('keydown',e=>{
   if(dd&&state.mode==='world'){e.preventDefault();movePlayer(DIRS[dd][0],DIRS[dd][1]);}
   if(e.key==='Escape'||e.key==='m'){
     if(state.mode==='world')showMenu();
-    else if(state.mode!=='battle'&&state.mode!=='title')enterWorld();
+    else if(state.mode!=='battle'&&state.mode!=='title'&&state.mode!=='intro')enterWorld();
   }
 });
 let ts=null;
@@ -4582,9 +4809,9 @@ $('worldCanvas').addEventListener('touchend',e=>{
   if(Math.abs(dx)>Math.abs(dy))movePlayer(dx>0?1:-1,0);else movePlayer(0,dy>0?1:-1);
 },{passive:true});
 
-showScreen('title');
+showScreen('intro');
 window.__booted=true;
-Promise.resolve().then(initTitle).catch(e=>window.__showFatal('Titel: '+(e&&e.message?e.message:e),false));
+Promise.resolve().then(startIntro).catch(e=>window.__showFatal('Intro: '+(e&&e.message?e.message:e),false));
 
 }catch(err){
   window.__showFatal((err&&err.message?err.message:err)+(err&&err.stack?'\n'+err.stack:''),true);
