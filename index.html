@@ -25,7 +25,7 @@
     color:var(--ink);font-weight:bold;font-size:12px;letter-spacing:2px;}
   .power-led{width:10px;height:10px;border-radius:50%;background:var(--accent);box-shadow:0 0 6px var(--accent);}
   .screen-frame{background:var(--frame);border-radius:10px;padding:10px;box-shadow:inset 0 2px 8px rgba(0,0,0,.55);}
-  .screen{background:var(--screen-bg);border-radius:4px;min-height:330px;padding:10px;color:var(--ink);
+  .screen{background:var(--screen-bg);border-radius:4px;min-height:330px;max-height:min(72vh,540px);padding:10px;color:var(--ink);
     display:flex;flex-direction:column;position:relative;overflow:hidden;}
   h1{font-size:26px;letter-spacing:2px;text-align:center;}
   h2{font-size:14px;letter-spacing:1px;margin-bottom:6px;}
@@ -93,7 +93,7 @@
   .mhead{font-size:10.5px;line-height:1.4;background:#efe8d6;border:2px solid var(--ink);
     border-radius:8px;padding:5px 7px;margin-bottom:5px;}
   .mhead b{font-size:11px;}
-  .tabs{display:grid;grid-template-columns:repeat(5,1fr);gap:3px;margin-bottom:6px;}
+  .tabs{display:grid;grid-template-columns:repeat(6,1fr);gap:3px;margin-bottom:6px;}
   #shopTabs{grid-template-columns:repeat(4,1fr);}
   .tabs button{padding:7px 2px;font-size:10px;letter-spacing:.5px;background:#bdb4a4;color:#3a3448;
     box-shadow:0 2px 0 #9a917f;}
@@ -215,6 +215,7 @@
           <button data-tab="box">BOX</button>
           <button data-tab="bag">BEUTEL</button>
           <button data-tab="dex">KATALOG</button>
+          <button data-tab="quests">QUESTS</button>
           <button data-tab="typen">TYPEN</button>
         </div>
         <div class="list" id="menuList"></div>
@@ -238,6 +239,10 @@
         <h2 id="dexTitle">KATALOG</h2>
         <div class="list dexgrid" id="dexGrid"></div>
         <button id="btnDexBack" class="secondary" style="margin-top:6px">◀ Zurück</button>
+        <div id="dexDetail" class="hidden" style="position:absolute;inset:0;background:var(--screen-bg);padding:10px;display:flex;flex-direction:column;z-index:6;">
+          <div id="dexDetailBody" class="list" style="overflow-y:auto;"></div>
+          <button id="btnDexDetailClose" class="secondary" style="margin-top:6px">◀ Zurück zum Katalog</button>
+        </div>
       </div>
 
       <div id="screen-shop" class="hidden" style="flex:1;display:flex;flex-direction:column;">
@@ -509,6 +514,7 @@ const SP={
   blattli:{p:{G:'#3c7a46',L:'#86d073',K:'#1e3320',W:'#fff'},r:['.....G......','....GGG.....','.....G......','...LLLLL....','..LLLLLLL...','..LWKLLWK...','..LLLLLLL...','..LLKKLLL...','...LLLLL....','...L...L....','..LL...LL...','............']},
   blattlon:{p:{G:'#2e6338',L:'#74c064',K:'#1e3320',W:'#fff',P:'#f090b0'},r:['..P..PP..P..','...GGGGGG...','..GLLLLLLG..','..LLLLLLLL..','.LLWKLLWKLL.','.LLLLLLLLLL.','.LLLKKKKLLL.','..LLLLLLLL..','..LL....LL..','.LLL....LLL.','............','............']},
   blattgigant:{p:{G:'#2e6338',L:'#74c064',K:'#173318',W:'#fff'},r:['..GGGGGGGG..','.GLLLLLLLLG.','.LLLLLLLLLL.','.LLLLLLLLLL.','.LLWKLLWKLL.','.LLLLLLLLLL.','.LLLGGGGLLL.','.LLLLLLLLLL.','..LLLLLLLL..','..LL....LL..','.LLL....LLL.','............']},
+  blattmonarch:{p:{G:'#1e4d28',L:'#8be070',K:'#132818',W:'#fff',P:'#f2d34a'},r:['.PP.GG.PP...','..GGGGGGGG..','.GLLLLLLLLG.','.LLLLLLLLLL.','.LLWKLLWKLL.','.LLLLLLLLLL.','.LLLPPPPLLL.','.LLLLLLLLLL.','..LLLLLLLL..','..LL....LL..','.LLL....LLL.','............']},
   zappzap:{p:{Y:'#f0d240',D:'#c9932c',K:'#3a2c10',W:'#fff'},r:['....D..D....','....YD.DY...','...YYYYYY...','..YYYYYYYY..','..YWKYYWKY..','..YYYYYYYY..','..YYKKYYYY..','...YYYYYY...','....YDDY....','.....YY.....','....Y..Y....','............']},
   zappzorn:{p:{Y:'#eac82e',D:'#a87920',K:'#3a2c10',W:'#fff'},r:['..D.D..D.D..','..YD.YY.DY..','..YYYYYYYY..','.YYYYYYYYYY.','.YWKYYYYWKY.','.YYYYYYYYYY.','.YYYKKKKYYY.','..YYYYYYYY..','...YDYYDY...','....Y..Y....','...YY..YY...','............']},
   zapptitan:{p:{Y:'#eac82e',D:'#a87920',K:'#3a2c10',W:'#fff'},r:['..DY.YY.YD..','..YYYYYYYY..','.YYYYYYYYYY.','.YYYYYYYYYY.','.YWKYYYYWKY.','.YYYYYYYYYY.','.YYYDDDDYYY.','.YYYYYYYYYY.','..YYYYYYYY..','..YD....DY..','...Y....Y...','............']},
@@ -518,6 +524,7 @@ const SP={
   spuki:{p:{P:'#8a6cb8',L:'#b89ae0',K:'#241638',W:'#fff'},r:['....PPPP....','...PPPPPP...','..PPPPPPPP..','..PWKPPWKP..','..PPPPPPPP..','..PPPKKPPP..','..PPPPPPPP..','..PPPPPPPP..','..P.PP.PP...','..P..P..P...','............','............']},
   spukrator:{p:{P:'#7355a8',L:'#b89ae0',K:'#241638',W:'#fff',G:'#f0d240'},r:['..G..GG..G..','..PPPPPPPP..','.PPPPPPPPPP.','.PWKPPPPWKP.','.PPPPPPPPPP.','.PPPKKKKPPP.','.PPPPPPPPPP.','.PPPPPPPPPP.','.PP.PP.PP.P.','.P..P...P...','............','............']},
   spukfuerst:{p:{P:'#6a4a9c',L:'#c8aaf0',K:'#1a0f2e',W:'#fff',G:'#f0d240'},r:['.G..GG..G...','..PPPPPPPP..','.PPPPPPPPPP.','PPPPPPPPPPPP','PWKPPPPPWKPP','PPPPPPPPPPPP','PPPLLLLLLPPP','PPPPPPPPPPPP','PPPPPPPPPPPP','P.PP.PP.PP.P','.P..P..P..P.','............']},
+  spuktyrann:{p:{P:'#3a1e5c',L:'#8a6ad0',K:'#0a0616',W:'#ff4a4a',G:'#f0d240'},r:['.G.GGGGG.G..','..PPPPPPPP..','.PPPPPPPPPP.','PPPPPPPPPPPP','PWKPPPPPWKPP','PPPPPPPPPPPP','PPPLLLLLLPPP','PPPPPPPPPPPP','PPPPPPPPPPPP','P.PP.PP.PP.P','.P..P..P..P.','............']},
   frosti:{p:{C:'#a8e8f5',B:'#5fb8c9',K:'#1e3a4a',W:'#fff'},r:['.....W......','....WCW.....','...CCCCC....','..CCCCCCC...','..CWKCCWKC..','..CCCCCCC...','..CCKKCCC...','...CCCCC....','...BBBBB....','...B...B....','..BB...BB...','............']},
   frostor:{p:{C:'#a8e8f5',B:'#4aa0b8',K:'#1e3a4a',W:'#fff'},r:['..W......W..','..WC....CW..','...CCCCCC...','..CCCCCCCC..','.CCCCCCCCCC.','.CWKCCCCWKC.','.CCCCCCCCCC.','.CCCKKKKCCC.','..BBBBBBBB..','..BB....BB..','.BBB....BBB.','............']},
   frostmonarch:{p:{C:'#c8f0ff',B:'#3f92ac',K:'#12293a',W:'#fff'},r:['.W..WWW..W..','.WC.CCC.CW..','.CCCCCCCCC..','CCCCCCCCCCC.','CCWKCCCCWKC.','CCCCCCCCCCC.','CCCWWWWWCCC.','CBBBBBBBBBC.','.BBBBBBBBB..','.BB.....BB..','BBB.....BBB.','............']},
@@ -531,6 +538,7 @@ const SP={
   voltrex:{p:{Y:'#f5d63a',D:'#a87920',K:'#3a2c10',W:'#fff',B:'#5fb8e8'},r:['..D.Y..Y.D..','.DYYYYYYYYD.','DYYYYYYYYYYD','YYYYYYYYYYYY','YYWKYYYYWKYY','YYYYYYYYYYYY','YYYBBBBBBYYY','YYYYYYYYYYYY','DYYYYYYYYYYD','.DYY....YYD.','..D......D..','............']},
   umbrakor:{p:{P:'#4e2f7a',L:'#b89ae0',K:'#0e0618',W:'#fff'},r:['.K..KKKK..K.','..PPPPPPPP..','.PPPPPPPPPP.','PPPPPPPPPPPP','PPWKPPPPWKPP','PPPPPPPPPPPP','PPPLLLLLLPPP','PPPPPPPPPPPP','PPPPPPPPPPPP','.PP.PP.PP.P.','..P..P..P...','............']},
   aeternis:{p:{S:'#e8e4f0',G:'#f0c93c',K:'#2a2438',W:'#fff'},r:['..G.GGGG.G..','.GSSSSSSSSG.','GSSSSSSSSSSG','SSSSSSSSSSSS','SSWKSSSSWKSS','SSSSSSSSSSSS','SSSGGGGGGSSS','SSSSSSSSSSSS','GSSSSSSSSSSG','.GSS....SSG.','..G......G..','............']},
+  nebelwisp:{p:{P:'#9a7ad0',L:'#c9b0f0',W:'#fff',K:'#4a3a70'},r:['............','....LLLL....','...LPPPPL...','..LPPWWPPL..','..LPPWWPPL..','..LPPPPPPL..','...LPPPPL...','....LLLL....','...K....K...','..K......K..','.K........K.','............']},
   draklin:{p:{D:'#4a3a90',L:'#7a6ad0',K:'#160f30',W:'#fff',R:'#e05a5a'},r:['............','...D....D...','...DD..DD...','..DDDDDDDD..','..DLLLLLLD..','..LWKLLWKL..','..LLLLLLLL..','..LLKKKKLL..','...LLLLLL...','...L....L...','..LL....LL..','............']},
   drakon:{p:{D:'#42327f',L:'#7a6ad0',K:'#160f30',W:'#fff',R:'#e05a5a'},r:['..D......D..','..DD....DD..','.DDDDDDDDDD.','.DLLLLLLLLD.','.LWKLLLLWKL.','.LLLLLLLLLL.','.LLKKKKKKLL.','.LLLLLLLLLL.','..LLLLLLLL..','..LL....LL..','.LLL....LLL.','............']},
   draconar:{p:{D:'#3a2a72',L:'#8a7ae0',K:'#120c28',W:'#fff',R:'#e05a5a'},r:['.D..DDDD..D.','.DD.DDDD.DD.','DDDDDDDDDDDD','DLLLLLLLLLLD','LWKLLLLLLWKL','LLLLLLLLLLLL','LLRRRRRRRRLL','LLLLLLLLLLLL','.LLLLLLLLLL.','.LL......LL.','LLL......LLL','............']},
@@ -632,7 +640,8 @@ const DEX={
   aquatlas:{name:'Aquatlas',type:'Wasser',base:[18,16,18,12]},
   blattli:{name:'Blattli',type:'Pflanze',base:[14,12,13,11],evo:'blattlon',evoLvl:14},
   blattlon:{name:'Blattlon',type:'Pflanze',base:[16,15,15,12],evo:'blattgigant',evoLvl:30},
-  blattgigant:{name:'Blattgigant',type:'Pflanze',base:[20,18,19,13]},
+  blattgigant:{name:'Blattgigant',type:'Pflanze',base:[20,18,19,13],evo:'blattmonarch',evoLvl:1,evoItem:'wurzelkristall'},
+  blattmonarch:{name:'Blattmonarch',type:'Pflanze',base:[24,21,22,15]},
   zappzap:{name:'Zappzap',type:'Elektro',base:[10,12,9,16],evo:'zappzorn',evoLvl:14},
   zappzorn:{name:'Zappzorn',type:'Elektro',base:[12,15,10,19],evo:'zapptitan',evoLvl:30},
   zapptitan:{name:'Zapptitan',type:'Elektro',base:[14,18,12,22]},
@@ -641,7 +650,8 @@ const DEX={
   brockoloss:{name:'Brockoloss',type:'Stein',base:[20,17,24,8]},
   spuki:{name:'Spuki',type:'Geist',base:[10,14,8,14],evo:'spukrator',evoLvl:14},
   spukrator:{name:'Spukrator',type:'Geist',base:[12,17,10,16],evo:'spukfuerst',evoLvl:30},
-  spukfuerst:{name:'Spukfürst',type:'Geist',base:[14,21,12,18]},
+  spukfuerst:{name:'Spukfürst',type:'Geist',base:[14,21,12,18],evo:'spuktyrann',evoLvl:1,evoItem:'seelenanker'},
+  spuktyrann:{name:'Spuktyrann',type:'Geist',base:[17,25,14,21]},
   frosti:{name:'Frosti',type:'Eis',type2:'Wasser',base:[12,12,12,10],evo:'frostor',evoLvl:14},
   frostor:{name:'Frostor',type:'Eis',type2:'Wasser',base:[14,15,14,11],evo:'frostmonarch',evoLvl:30},
   frostmonarch:{name:'Frostmonarch',type:'Eis',type2:'Wasser',base:[17,18,17,13]},
@@ -655,6 +665,7 @@ const DEX={
   voltrex:{name:'Voltrex',type:'Elektro',base:[20,17,16,21],legend:true},
   umbrakor:{name:'Umbrakor',type:'Geist',base:[20,18,16,18],legend:true},
   aeternis:{name:'Aeternis',type:'Normal',type2:'Drache',base:[23,19,21,19],legend:true},
+  nebelwisp:{name:'Nebelwisp',type:'Geist',base:[16,15,14,17]},
   krabbo:{name:'Krabbo',type:'Wasser',type2:'Stein',base:[12,13,14,8],evo:'krabbor',evoLvl:14},
   krabbor:{name:'Krabbor',type:'Wasser',type2:'Stein',base:[14,16,17,9],evo:'krabbolem',evoLvl:30},
   krabbolem:{name:'Krabbolem',type:'Wasser',type2:'Stein',base:[17,19,20,10]},
@@ -669,6 +680,55 @@ const DEX={
   faustitan:{name:'Faustitan',type:'Kampf',base:[18,22,15,16]}
 };
 const FAMILIES=['flamko','aquappi','blattli','zappzap','brockel','spuki','frosti','giftling','flatterix','krabbo','draklin','erzling','faustli'];
+// ---- Kryptid-Lexikon: erzählende Texte statt reiner Werte ----
+const LORE={
+  flamko:'Sammelt glühende Kieselsteine und hortet sie in kleinen Erdlöchern. Man sagt, ein Feuer erlischt nie, solange ein Flamko in der Nähe wohnt.',
+  flamkor:'Die Glut in seiner Brust wird mit jedem Kampf heißer. Schmiede in Ascheort lassen ihre Öfen gern von einem Flamkor bewachen.',
+  flamgeddon:'Wenn ein Flamgeddon brüllt, sollen ganze Nebelbänke am Kraterrand verdampfen. Nur wenige haben eines aus der Nähe gesehen – und erzählen gern davon.',
+  aquappi:'Springt bei Sonnenaufgang gern aus dem Wasser, um nach Insekten zu schnappen. Fischer an der Kristallküste deuten das als gutes Omen.',
+  aquadon:'Zieht in kleinen Gruppen durch Flussmündungen und markiert sein Revier mit leisen, tiefen Rufen, die kilometerweit zu hören sind.',
+  aquatlas:'Der Legende nach trägt ein einziger Aquatlas genug Kraft in den Flossen, um eine kleine Flotte zu kentern – wenn man ihn denn reizt.',
+  blattli:'Die Blätter auf seinem Rücken drehen sich stets zur Sonne. Kinder in Mooshain binden ihm manchmal kleine Blütenkränze um, die es geduldig trägt.',
+  blattlon:'Wächst so eng mit dem Wald zusammen, dass alte Bäume ihm manchmal Platz zu machen scheinen. Niemand weiß, ob das Zufall ist.',
+  blattgigant:'Wo ein Blattgigant lange genug steht, beginnt nach einiger Zeit ein ganzer kleiner Hain zu wachsen.',
+  zappzap:'Vor Gewittern wird es unruhig und knistert leise. Manche Bauern in der Steppe nutzen das als natürliche Wetterwarnung.',
+  zappzorn:'Kann kleine Blitze zwischen seinen Hörnern erzeugen, wenn es sich erschrickt – meist zur eigenen Überraschung.',
+  zapptitan:'Ein wandelnder Sturm auf vier Beinen. Wo ein Zapptitan entlangzieht, sollen sich Windmühlen von allein zu drehen beginnen.',
+  brockel:'Schläft tagsüber fast ausschließlich und wird erst in der Dämmerung aktiv. Wanderer verwechseln schlafende Brockel gern mit Findlingen.',
+  brockulus:'Seine Haut wird mit den Jahren härter als mancher Fels. Steinmetze in Felsenwacht schwören, dass sein Rücken Werkzeuge stumpf werden lässt.',
+  brockoloss:'Manche Berghänge, so heißt es, sind eigentlich schlafende Brockoloss – nur eben sehr, sehr alte.',
+  spuki:'Verschwindet augenblicklich, sobald man ihm zu nahekommt, und taucht Sekunden später an ganz anderer Stelle wieder auf.',
+  spukrator:'Bewegt sich gern durch verlassene Gänge und leere Zimmer. Man hört es eher, als dass man es sieht.',
+  spukfuerst:'Alte Legenden aus dem Nebelmoor erzählen von einem Spukfürst, der niemanden je hat gehen lassen, der ihn wirklich gesucht hat.',
+  frosti:'Zeigt sich fast ausschließlich, wenn Schnee fällt. Bei klarem Himmel bleibt es tief in seinen Eishöhlen verborgen.',
+  frostor:'Formt kleine Eiskristalle allein durch seinen Atem. Kinder in Felsenwacht sammeln sie manchmal als Glücksbringer.',
+  frostmonarch:'Soll über den höchsten Gipfeln des Felsenpasses wachen und den ersten Schnee jedes Winters persönlich einleiten.',
+  giftling:'Mag es dunkel und feucht und meidet direktes Sonnenlicht, wo es nur kann. Im Nebelmoor fühlt es sich sichtlich am wohlsten.',
+  giftkralle:'Seine Berührung hinterlässt einen schwachen, aber unverwechselbaren Geruch nach bitteren Kräutern.',
+  giftrex:'Ganze Pfade im Moor gelten als gemieden, seit ein Giftrex dort sein Revier beansprucht hat.',
+  flatterix:'Fliegt in schnellen, unberechenbaren Kurven zwischen den Bäumen hin und her und landet selten lange an derselben Stelle.',
+  flatterax:'Zieht in kleinen Schwärmen und warnt sich gegenseitig mit hohen Rufen vor Gefahr.',
+  flatterlord:'Soll so hoch fliegen können, dass es von unten kaum mehr als ein Schatten am Himmel ist.',
+  krabbo:'Gräbt sich bei Ebbe tief in den Sand ein und wartet geduldig auf die nächste Flut.',
+  krabbor:'Seine Scheren werden mit jedem Jahr härter – Fischer an der Kristallküste erkennen alte Exemplare an den Kerben darin.',
+  krabbolem:'Ein ausgewachsener Krabbolem kann angeblich einen kleinen Fischerkahn allein mit einer Schere anheben.',
+  draklin:'Neugierig und wachsam zugleich – es beobachtet Fremde oft lange, bevor es sich zeigt.',
+  drakon:'Zieht bevorzugt hoch über Felsgraten seine Bahnen, wo kaum jemand es aus der Nähe sieht.',
+  draconar:'Alte Wandmalereien in Höhlen des Felsenpasses zeigen Wesen, die einem Draconar erstaunlich ähnlich sehen.',
+  erzling:'Frisst kleine Mengen Mineralgestein und soll dadurch mit der Zeit selbst metallischer werden.',
+  erzkralle:'Sein Panzer klirrt leise bei jedem Schritt – manche Minenarbeiter orientieren sich im Dunkeln daran.',
+  erzkoloss:'Ganze Stollen im Aschekrater sollen von einem einzigen alten Erzkoloss gegraben worden sein.',
+  faustli:'Übt seine Schläge am liebsten an alten Baumstümpfen, bis diese buchstäblich in sich zusammenfallen.',
+  fauster:'Trainiert offenbar auch ohne Publikum weiter – Wanderer berichten von dumpfen Schlägen tief aus dem Wald.',
+  faustitan:'Ein einziger Schlag soll genügen, um einen ausgewachsenen Baum zu fällen. Niemand testet das freiwillig aus.',
+  silvarion:'Hüter des Waldes. Man sagt, der gesamte Flüsterwald reagiert auf seine Stimmung – wird er zornig, verdichtet sich der Nebel binnen Minuten.',
+  voltrex:'Herr der Stürme. Wo Voltrex erscheint, ziehen binnen Augenblicken Gewitterwolken auf, selbst über der sonst so trockenen Steppe.',
+  umbrakor:'Schatten des Moores. Manche behaupten, es sei kein Kryptid im eigentlichen Sinn, sondern das Moor selbst, das eine Gestalt angenommen hat.',
+  aeternis:'Wächter der Ewigkeit. Über der Meisterstadt erzählt man sich, Aeternis sei so alt wie die Region selbst – und werde sie überdauern, wenn alles andere vergangen ist.',
+  blattmonarch:'Nur ein Blattgigant, das lange genug einen Wurzelkristall bei sich trägt, wächst zu dieser Form heran. Ganze Wälder sollen sich einem Blattmonarch unterordnen.',
+  spuktyrann:'Mit einem Seelenanker verschmilzt ein Spukfürst zu etwas Dunklerem. Manche sagen, es habe aufgehört, ein einzelnes Wesen zu sein.',
+  nebelwisp:'Ein Rest von etwas Größerem, das sich im Nebelmoor verloren hat. Niemand weiß genau, was es ist – nur, dass es einem folgt, wenn man es einmal gesehen hat.'
+};
 const DEX_ORDER=[];
 FAMILIES.forEach(f=>{let c=f;while(c){DEX_ORDER.push(c);c=DEX[c].evo;}});
 const FAMILY_OF={};
@@ -676,6 +736,9 @@ FAMILIES.forEach(f=>{let c=f;while(c){FAMILY_OF[c]=f;c=DEX[c].evo;}});
 // Legendäre: eigene Familie, erscheinen nur an festen Orten
 const LEGENDS=['silvarion','voltrex','umbrakor','aeternis'];
 LEGENDS.forEach(id=>{DEX_ORDER.push(id);FAMILY_OF[id]=id;});
+// Weitere Einzelwesen, die nur als Questbelohnung zu bekommen sind
+const SPECIALS=['nebelwisp'];
+SPECIALS.forEach(id=>{DEX_ORDER.push(id);FAMILY_OF[id]=id;});
 const STARTERS=['flamko','aquappi','blattli'];
 
 const LEARNSETS={
@@ -710,6 +773,8 @@ const ITEMS={
   schnellfeder:{name:'Schnellfeder',desc:'Tragitem: +25% Initiative',price:1300,kind:'held',effect:'schnell'},
   fokusgurt:{name:'Fokusgurt',desc:'Tragitem: übersteht einen Treffer bei vollen KP',price:1800,kind:'held',effect:'fokus'},
   heilkraut:{name:'Heilkraut',desc:'Tragitem: heilt einmal 40% bei wenig KP',price:1600,kind:'held',effect:'heilkraut'},
+  wurzelkristall:{name:'Wurzelkristall',desc:'Seltenes Tragitem: lässt einen Blattgigant beim nächsten Level-Up zum Blattmonarch erwachen.',price:0,kind:'held',effect:'evo'},
+  seelenanker:{name:'Seelenanker',desc:'Seltenes Tragitem: lässt einen Spukfürst beim nächsten Level-Up zum Spuktyrann verschmelzen.',price:0,kind:'held',effect:'evo'},
   // --- Schriftrollen: nur passender Typ kann sie lernen ---
   r_pflanze:{name:'Rolle: Rankengriff',desc:'Nur für Pflanze-Kryptiden',price:0,kind:'scroll',move:'rankengriff',forType:'Pflanze'},
   r_geist:{name:'Rolle: Seelenfeuer',desc:'Nur für Geist-Kryptiden',price:0,kind:'scroll',move:'seelenfeuer',forType:'Geist'},
@@ -737,71 +802,67 @@ const heldEffect=m=>(m&&m.held&&ITEMS[m.held]&&ITEMS[m.held].kind==='held')?ITEM
 
 // ============================ KARTEN ============================
 // T=Baum/Fels W=Wasser .=Gras ,=hohes Gras P=Weg H=Rasthaus G=Tor
+// K=Holzbrücke O=Stein U=Busch M=Blumenwiese V=Hügel L=Lava (neue organische Terrain-Tiles)
 const MAPS=[
- {rows:['TTTTTTTTTTTTTTTTTTTTTT','T.........GG.........T','T..,,,....PP....,,,..T','T..,,,....PP....,,,..T','T.........PP.........T','T....PPPPPPPPPPPP....T','T....P..........P....T','T..,,P...HHHH...P,,,.T','T..,,P...HHHH...P,,,.T','T....P..........P....T','T....PPPPPPPPPPPP....T','T.........PP.........T','T..,,,,...PP...,,,,..T','T..,,,,...PP...,,,,..T','T.........PP.........T','T.........PP.........T','T....,,,..PP..,,,....T','TTTTTTTTTTTTTTTTTTTTTT'],
-  spawn:[10,16],house:[9,7],trainers:[[4,3],[17,3],[5,9],[16,9],[8,13]],boss:[10,2],rival:[13,13]},
- {rows:['TTTTTTTTTTTTTTTTTTTTTT','T.........GG.........T','T,,,TT....PP....TT,,,T','T,,,TT....PP....TT,,,T','T.....TTTTPPTTTT.....T','T.PPPPP...PP...PPPPP.T','T.P...,,,,PP,,,,...P.T','T.P...,,,,PP,,,,...P.T','T.P.HHHH..PP..TTTT.P.T','T.P.HHHH..PP.......P.T','T.PPPPPPPPPPPPPPPPPP.T','T,,,,..TT.PP.TT..,,,,T','T,,,,..TT.PP.TT..,,,,T','T.......,,PP,,.......T','T.TTTT..,,PP,,..TTTT.T','T.......,,PP,,.......T','T.........PP.........T','TTTTTTTTTTTTTTTTTTTTTT'],
-  spawn:[10,16],house:[4,8],trainers:[[3,3],[18,3],[6,7],[15,7],[4,13]],boss:[10,2],rival:[17,13],legend:[19,15]},
- {rows:['TTTTTTTTTTTTTTTTTTTTTT','T.........GG.........T','T..WWWW...PP...WWWW..T','T..WWWW...PP...WWWW..T','T.........PP.........T','T..,,,,PPPPPPPP,,,,..T','T..,,,,P......P,,,,..T','T......P.HHHH.P......T','TWWWW..P.HHHH.P..WWWWT','TWWWW..P......P..WWWWT','T......PPPPPPPP......T','T..,,,....PP....,,,..T','T..,,,....PP....,,,..T','T.....WWW.PP.WWW.....T','T.....WWW.PP.WWW.....T','T.........PP.........T','T..,,,,...PP...,,,,..T','TTTTTTTTTTTTTTTTTTTTTT'],
-  spawn:[10,16],house:[9,7],trainers:[[5,4],[16,4],[8,6],[13,6],[5,12]],boss:[10,2],rival:[16,12]},
- {rows:['TTTTTTTTTTTTTTTTTTTTTT','T.........GG.........T','T,,,,,....PP....,,,,,T','T,,,,,....PP....,,,,,T','T,,,,,....PP....,,,,,T','T.....PPPPPPPPPP.....T','T.....P........P.....T','T,,,,,P.HHHH...P,,,,,T','T,,,,,P.HHHH...P,,,,,T','T.....P........P.....T','T.....PPPPPPPPPP.....T','T,,,,,....PP....,,,,,T','T,,,,,....PP....,,,,,T','T.........PP.........T','T..TT.....PP.....TT..T','T..TT.....PP.....TT..T','T,,,,,....PP....,,,,,T','TTTTTTTTTTTTTTTTTTTTTT'],
-  spawn:[10,16],house:[8,7],trainers:[[3,3],[18,3],[7,6],[14,6],[3,12]],boss:[10,2],rival:[18,12],legend:[2,13]},
- {rows:['TTTTTTTTTTTTTTTTTTTTTT','T.........GG.........T','TTTT,,,...PP...,,,TTTT','TTTT,,,...PP...,,,TTTT','T.........PP.........T','T..PPPPPPPPPPPPPPPP..T','T..P..TTT....TTT..P..T','T..P..TTT....TTT..P..T','T..P....HHHH......P..T','T..P....HHHH......P..T','T..PPPPPPPPPPPPPPPP..T','T.....,,,,PP,,,,.....T','T.....,,,,PP,,,,.....T','TTT.......PP.......TTT','TTT..,,,..PP..,,,..TTT','T....,,,..PP..,,,....T','T.........PP.........T','TTTTTTTTTTTTTTTTTTTTTT'],
-  spawn:[10,16],house:[8,8],trainers:[[5,3],[16,3],[3,7],[18,7],[6,12]],boss:[10,2],rival:[15,12]},
- {rows:['TTTTTTTTTTTTTTTTTTTTTT','T.........GG.........T','T..,,,,,..PP..,,,,,..T','T..,,,,,..PP..,,,,,..T','T.....WW..PP..WW.....T','T.PPPPWW..PP..WWPPPP.T','T.P...WW..PP..WW...P.T','T.P.......PP.......P.T','T.P..HHHH.PP.......P.T','T.P..HHHH.PP.......P.T','T.PPPPPPPPPPPPPPPPPP.T','T..,,,,,..PP..,,,,,..T','T..,,,,,..PP..,,,,,..T','T..WW.....PP.....WW..T','T..WW.....PP.....WW..T','T.........PP.........T','T..,,,,,..PP..,,,,,..T','TTTTTTTTTTTTTTTTTTTTTT'],
-  spawn:[10,16],house:[5,8],trainers:[[4,3],[17,3],[3,7],[18,7],[5,12]],boss:[10,2],rival:[16,12],legend:[2,15]},
- {rows:['TTTTTTTTTTTTTTTTTTTTTT','T.........GG.........T','TTT..TT...PP...TT..TTT','TTT..TT...PP...TT..TTT','T..,,,....PP....,,,..T','T..,,,.PPPPPPPP.,,,..T','T......P......P......T','TTT..TTP.HHHH.PTT..TTT','TTT..TTP.HHHH.PTT..TTT','T......P......P......T','T..,,,.PPPPPPPP.,,,..T','T..,,,....PP....,,,..T','TTT..TT...PP...TT..TTT','TTT..TT...PP...TT..TTT','T..,,,....PP....,,,..T','T..,,,....PP....,,,..T','T.........PP.........T','TTTTTTTTTTTTTTTTTTTTTT'],
-  spawn:[10,16],house:[9,7],trainers:[[4,4],[17,4],[8,6],[13,6],[4,11]],boss:[10,2],rival:[17,11]},
- {rows:['TTTTTTTTTTTTTTTTTTTTTT','T.........GG.........T','T..,,,....PP....,,,..T','T..TTTT...PP...TTTT..T','T..TTTT...PP...TTTT..T','T..,,,....PP....,,,..T','T....PPPPPPPPPPPP....T','T....P..........P....T','T....P..HHHH....P....T','T....P..HHHH....P....T','T....PPPPPPPPPPPP....T','T.........PP.........T','T..TTTT...PP...TTTT..T','T..TTTT...PP...TTTT..T','T.........PP.........T','T..,,,,...PP...,,,,..T','T..,,,,...PP...,,,,..T','TTTTTTTTTTTTTTTTTTTTTT'],
-  spawn:[10,16],house:[8,8],trainers:[[10,14],[6,11],[14,11],[6,5],[14,5]],boss:null,rival:null,legend:[2,11]}
+ {rows:['TTTTTTTTTTTTTTTTTTTTTT','T.........GG.........T','T...VV,,,.PP.....VV..T','T.TT..,,,.PP.........T','T.TT......PP..WW..O..T','T.T...MMM.PP..WW.....T','T.....MMM.PPP.WW.....T','T.....MOM.PPP.WWWW...T','T.........PPPPPKKPW..T','T.TT.P....PP..WW.WW..T','T.TTUPM..PPP..WWWWW..T','T.T..P...PP...WW.,,,.T','T.....VV.PP...WW.,,,.T','T...TTU..PP..........T','T..,T,...PPP.........T','T..,,,...PPP.........T','T.........PP.........T','TTTTTTTTTTTTTTTTTTTTTT'],
+  spawn:[10,16],trainers:[[4,4],[17,4],[5,9],[16,9],[8,13]],boss:[10,2],rival:[13,13]},
+ {rows:['TTTTTTTTTTTTTTTTTTTTTT','T.........PP.........T','T.TT......PP.....TTT.T','T.TTT..,,,PP...O..TT.T','T.T....O,,PPP........T','T....U.,,,PPP..U.....T','T.........PPP...U.TT.T','T.TT..O...PP......TT.T','T.TT.....PPP.........T','T.....P..PP......T...T','T...T.P..PPPP........T','T.....P..PPPP,,,..TT.T','T.TT..M...PPP,,,..T..T','T.T..U....PP..,,.....T','T........PPP....TT...T','T...TT,,.PP..........T','T....,,,.PPS.........T','TTTTTTTTTTTTTTTTTTTTTT'],
+  spawn:[10,16],trainers:[[4,4],[17,4],[6,9],[15,10],[8,13]],boss:[10,2],rival:[13,13],legend:[19,15]},
+ {rows:['TTTTTTTTTTTTTTTTTTTTTT','T.........PP.........T','T.....,,,.PP.....O...T','T.....,,,.PP.O.WWWWW.T','T.WWW....PPP...WWWWW.T','T.WWW.U..PP...UWWWWW.T','T.WWW....PPP...WWWWW.T','T.....MM.PPP..KKKWWW.T','T..O..MM..PPP.KKKWWW.T','T....MM...PPP..WWWWW.T','T..U......PPP..WWWWW.T','T.WWW.....PP...WWWWW.T','T.WWW.U..PPP...WWWWW.T','T.WWW.,,,PP....WWWWW.T','T.....,,,PPP.O.WWWWW.T','T.....,,,PPP...WWWWW.T','T.........PP.........T','TTTTTTTTTTTTTTTTTTTTTT'],
+  spawn:[10,16],trainers:[[5,4],[13,4],[5,10],[13,9],[6,13]],boss:[10,2],rival:[12,12]},
+ {rows:['TTTTTTTTTTTTTTTTTTTTTT','T.........PP.........T','T.....,,,.PP.,,,,....T','T...VV,,,.PP.,,,,VV..T','T.....U,,.PP.,,O,....T','T.........PP.........T','T.........PP.........T','T..O.....VPPPP....O..T','T.........PPPP.......T','T.........PPPP.......T','T.........PPV........T','T........PPP....,,,,.T','T.,,,,...PP.....VV,,.T','T.,,VV...PPP...U,,,,.T','T.,,,,O..PPP....,,,,.T','T.,,,,....PP.........T','T.........PP.........T','TTTTTTTTTTTTTTTTTTTTTT'],
+  spawn:[10,16],trainers:[[5,4],[16,4],[3,9],[18,9],[6,13]],boss:[10,2],rival:[15,12],legend:[2,13]},
+ {rows:['TTTTTTTTTTTTTTTTTTTTTT','T.........PP.........T','T.........PP.........T','T.O.......PP.......O.T','T..O......PP...LL.O..T','T......O..PP...LLLL..T','T.........PP...LLLL..T','T..LLLL...PP.........T','T..LLLL...PPP........T','T..LLLL...PPP........T','T........PPPP........T','T........PPP..LLL.L..T','T.......PPP...LLLLL..T','T.......PP....LLLLL..T','T...O...PPPP.......O.T','T.O.....PPPP.O.......T','T.........PP.........T','TTTTTTTTTTTTTTTTTTTTTT'],
+  spawn:[10,16],trainers:[[4,4],[17,4],[8,6],[13,6],[4,11]],boss:[10,2],rival:[17,11]},
+ {rows:['TTTTTTTTTTTTTTTTTTTTTT','T.........PP.........T','T..,,,....PP.........T','T..,,,....PP.O.......T','T..,,,...PPP....OO...T','T..WWWW..PP.....O....T','T..WWWKK.PPPP........T','T..WWWW..PPPP.....U..T','T.........PPP........T','T.........PP...WWWW..T','T...OO..PPPP...KKWW..T','T...O...PPP....WWWW..T','T.......PPPP...WWW...T','T.....U.OPPP...,,,,..T','T........PPP..U,,,,..T','T........PP....,,,,..T','T........PPS.........T','TTTTTTTTTTTTTTTTTTTTTT'],
+  spawn:[10,16],trainers:[[3,3],[18,3],[7,6],[14,6],[3,12]],boss:[10,2],rival:[18,12],legend:[2,15]},
+ {rows:['TTTTTTTTTTTTTTTTTTTTTT','T.........PP.........T','T.........PP.........T','T.TT...VV.PP......TT.T','T.T......PPP..WWW..T.T','T.....O..PP...WKKO...T','T........PPP..WWWW...T','T...TT...PPP..WWWW...T','T.........PPP........T','T.........PPP........T','T........PPPP...TT...T','T........PPP.........T','T.TT....PPP.......TT.T','T.......PP...VVO.....T','T...O...PPPP.........T','T.......PPPP.........T','T.........PP.........T','TTTTTTTTTTTTTTTTTTTTTT'],
+  spawn:[10,16],trainers:[[4,4],[17,4],[8,6],[13,6],[4,11]],boss:[10,2],rival:[17,11]},
+ {rows:['TTTTTTTTTTTTTTTTTTTTTT','T.........PP.........T','T.........PP.........T','T..O......PP......O..T','T.........PP.........T','T........VPPV........T','T.........PP.........T','T.....O...PP...O.....T','T.........PP.........T','T.........PP.........T','T.....O..PPP...O.....T','T........PP..........T','T........VP.V........T','T........PPP.........T','T..O.....PPP......O..T','T.........PP.........T','T.........PP.........T','TTTTTTTTTTTTTTTTTTTTTT'],
+  spawn:[10,16],trainers:[[10,14],[6,11],[14,11],[6,5],[14,5]],boss:null,rival:null,legend:[2,11]}
 ];
 
-// ---- Stadt (gemeinsames Layout, je Gebiet eingefärbt) ----
+// ---- Stadt (je Gebiet ein eigener Grundriss & Thema) ----
 // B=Gebäudewand H=Rasthaus A=Arena N=Nordausgang S=Südausgang P=Weg .=Boden T=Rand
-const CITY_ROWS=[
-'TTTTTTTTTTTTTTTTTTTTTT',
-'T.........NN.........T',
-'T.........PP.........T',
-'T..BBBBB..PP..BBBBB..T',
-'T..BBBBB..PP..BBBBB..T',
-'T..BBHBB..PP..BBABB..T',
-'T....P....PP....P....T',
-'T....PPPPPPPPPPPP....T',
-'T.........PP.........T',
-'T..BBB....PP....BBB..T',
-'T..BBB....PP....BBB..T',
-'T.........PP.........T',
-'T..BBB....PP....BBB..T',
-'T..BBB....PP....BBB..T',
-'T.........PP.........T',
-'T.........PP.........T',
-'T.........SS.........T',
-'TTTTTTTTTTTTTTTTTTTTTT'];
+const CITY_DEFS=[
+ {rows:['TTTTTTTTTTTTTTTTTTTTTT','T.........NN.........T','T.........PP.........T','T..BBBBB..PP...BBBBB.T','T..BBBBB..PP...BBBBB.T','T..BBHBB..PP...BABBB.T','T....PP...PP....PP...T','T....PP...PP....PP...T','T...UPP...PP....PU...T','T....PP...PP....PP...T','T.PPPPPPPPPPPPPPPPPPPT','T.PPPPPPPPPPPPPPPPPP.T','T.WWWWWWWWKKWWWWWWWW.T','T.........PP.........T','T.....M..MPPM..M.....T','T..U......PP......U..T','T.........SS.........T','TTTTTTTTTTTTTTTTTTTTTT'],
+  doorH:[5,5],doorA:[16,5],npcs:[[4,9],[17,9],[7,14],[14,14]]},
+ {rows:['TTTTTTTTTTTTTTTTTTTTTT','T.........NN.........T','T.........PP.........T','T.TBBBBB..PP...BBBBT.T','T.TBBBBB..PP...BBBBT.T','T..BBHBB..PP...BABBB.T','T....PP...PP....PP...T','T...UPP...PP....PU...T','T....PP...PP....PP...T','T....PP...PP....PP...T','T.PPPPPPPPPPPPPPPPPPPT','T.PPPPPPPPPPPPPPPPPP.T','T...U.....PP.....U...T','T.T......MPPM......T.T','T.T.......PP.......T.T','T.........PP.........T','T.........SS.........T','TTTTTTTTTTTTTTTTTTTTTT'],
+  doorH:[5,5],doorA:[16,5],npcs:[[4,9],[17,9],[7,14],[14,14]]},
+ {rows:['TTTTTTTTTTTTTTTTTTTTTT','T.........NN.........T','T.........PP.........T','T..BBBBB..PP..BBBBB..T','T..BBBBB..PP..BBBBB..T','T..BBHBB..PP..BABBB..T','T....PP...PP...PP....T','T....PP...PP...PP....T','T....PP...PP...PP....T','T....PP...PP...PP....T','T.PPPPPPPPPPPPPPPWWWPT','T.PPPPPPPPPPPPPPKWWW.T','T.........PP....KWWW.T','T...O.....PP....KWWW.T','T...O.....PP....KWWW.T','T.........PP.....WWW.T','T.........SS.........T','TTTTTTTTTTTTTTTTTTTTTT'],
+  doorH:[5,5],doorA:[15,5],npcs:[[4,9],[13,9],[7,14],[15,13]]},
+ {rows:['TTTTTTTTTTTTTTTTTTTTTT','T.........NN.........T','T.........PP.........T','T..BBBBB..PP...BBBBB.T','T..BBBBB..PP...BBBBB.T','T..BBHBB..PP...BABBB.T','T....PP...PP....PP...T','T....PP...PP....PP...T','T..V.PP...PP....PPV..T','T....PP...PP....PP...T','T.PPPPPPPPPPPPPPPPPPPT','T.PPPPPPPPPPPPPPPPPP.T','T.........PP.........T','T..V......PP......V..T','T.........PP.........T','T.........PP.........T','T.........SS.........T','TTTTTTTTTTTTTTTTTTTTTT'],
+  doorH:[5,5],doorA:[16,5],npcs:[[4,9],[17,9],[7,14],[14,14]]},
+ {rows:['TTTTTTTTTTTTTTTTTTTTTT','T.........NN.........T','T.........PP.........T','T..BBBBB..PP...BBBBB.T','T..BBBBB..PP...BBBBB.T','T..BBHBB..PP...BABBB.T','T....PP...PP....PP...T','T....PP...PP....PP...T','T..O.PP...PP....PPO..T','T....PP...PP....PP...T','T.PPPPPPPPPPPPPPPPPPPT','T.PPPPPPPPPPPPPPPPPP.T','T.........PP.........T','T..LL.....PP.....LL..T','T.........PP.........T','T.........PP.........T','T.........SS.........T','TTTTTTTTTTTTTTTTTTTTTT'],
+  doorH:[5,5],doorA:[16,5],npcs:[[4,9],[17,9],[7,14],[14,14]]},
+ {rows:['TTTTTTTTTTTTTTTTTTTTTT','T.........NN.........T','T.........PP.........T','T..BBBBB..PP...BBBBB.T','T..BBBBB..PP...BBBBB.T','T..BBHBB..PP...BABBB.T','T....PP...PP....PP...T','T....PO...PP...OPP...T','T....PP...PP....PP...T','T....PP...PP....PP...T','T.PPPPPPPOPPOPPPPPPPPT','T.PPPPPPPPPPPPPPPPPP.T','T.........PP.........T','T.....O...PP...O.....T','T.........PP.........T','T.........PP.........T','T.........SS.........T','TTTTTTTTTTTTTTTTTTTTTT'],
+  doorH:[5,5],doorA:[16,5],npcs:[[4,9],[17,9],[7,14],[14,14]]},
+ {rows:['TTTTTTTTTTTTTTTTTTTTTT','T.........NN.........T','T.........PP.........T','T..BBBBB..PP...BBBBB.T','T..BBBBB..PP...BBBBB.T','T..BBHBB..PP...BABBB.T','T....PP...PP....PP...T','T....PP...PP....PP...T','T....PP...PP....PP...T','T....PP...PP....PP...T','T.PPPPPPPPPPPPPPPPPPPT','T.PPPPPPPPPPPPPPPPPP.T','T........WWWW........T','T..O.....WWWW.....O..T','T........WWWW........T','T.........PP.........T','T.........SS.........T','TTTTTTTTTTTTTTTTTTTTTT'],
+  doorH:[5,5],doorA:[16,5],npcs:[[4,9],[17,9],[3,15],[18,15]]},
+ {rows:['TTTTTTTTTTTTTTTTTTTTTT','T.........NN.........T','T.........PP.........T','T..BBBBB..PP...BBBBB.T','T..BBBBB..PP...BBBBB.T','T..BBHBB..PP...BABBB.T','T....PP...PP....PP...T','T....PP...PP....PP...T','T...OPP...PP....PO...T','T....PP..OPPO...PP...T','T.PPPPPPPPPPPPPPPPPPPT','T.PPPPPPPPPPPPPPPPPP.T','T.........PP.........T','T...O.....PP.....O...T','T.........PP.........T','T.........PP.........T','T.........SS.........T','TTTTTTTTTTTTTTTTTTTTTT'],
+  doorH:[5,5],doorA:[16,5],npcs:[[4,9],[17,9],[7,14],[14,14]]}
+];
 // ---- Arena (Innenraum) ----
 // F=Boden D=Ausgang B=Wand
-const ARENA_ROWS=[
-'BBBBBBBBBBBBBBBBBBBBBB',
-'BFFFFFFFFFFFFFFFFFFFFB',
-'BFFFFFFFFFFFFFFFFFFFFB',
-'BFFFFFFFFFFFFFFFFFFFFB',
-'BFFBBFFFFFFFFFFBBFFFFB',
-'BFFBBFFFFFFFFFFBBFFFFB',
-'BFFFFFFFFFFFFFFFFFFFFB',
-'BFFFFFFFFFFFFFFFFFFFFB',
-'BFFBBFFFFFFFFFFBBFFFFB',
-'BFFBBFFFFFFFFFFBBFFFFB',
-'BFFFFFFFFFFFFFFFFFFFFB',
-'BFFFFFFFFFFFFFFFFFFFFB',
-'BFFBBFFFFFFFFFFBBFFFFB',
-'BFFBBFFFFFFFFFFBBFFFFB',
-'BFFFFFFFFFFFFFFFFFFFFB',
-'BFFFFFFFFFFFFFFFFFFFFB',
-'BFFFFFFFFFDDFFFFFFFFFB',
-'BBBBBBBBBBBBBBBBBBBBBB'];
-const ARENA_POS=[[6,14],[15,14],[6,10],[15,10],[10,6]];
-const ARENA_BOSS=[10,2];
-const CITY_DOOR_H=[5,5], CITY_DOOR_A=[16,5];
-const CITY_NPCS_POS=[[6,8],[15,8],[6,11],[15,11],[8,14],[13,14]];
+const ARENA_DEFS=[
+ {rows:['BBBBBBBBBBBBBBBBBBBBBB','BFFFFFFFFFFFFFFFFFFFFB','BFFFFFFFFFFFFFFFFFFFFB','BFFFFFFFFFFFFFFFFFFFFB','BFFFFFFFFFFFFFFFFFFFFB','BFFFFFFFFFFFFFFFFFFFFB','BFFFFFFFFFFFFFFFFFFFFB','BFFFFFFFFFFFFFFFFFFFFB','BFFFFFFFFFFFFFFFFFFFFB','BFFFFFFFFFFFFFFFFFFFFB','BFFFFFFFFFFFFFFFFFFFFB','BFFFFFFFFFFFFFFFFFFFFB','BFFFFFFFFFFFFFFFFFFFFB','BFFFFFFFFFFFFFFFFFFFFB','BFFFFFFFFFFFFFFFFFFFFB','BFFFFFFFFFFFFFFFFFFFFB','BFFFFFFFFFDDFFFFFFFFFB','BBBBBBBBBBBBBBBBBBBBBB'],
+  pos:[[6,14],[15,14],[6,10],[15,10],[10,6]],boss:[10,2]},
+ {rows:['BBBBBBBBBBBBBBBBBBBBBB','BFFFFFFFFFFFFFFFFFFFFB','BFFFFFFFFFFFFFFFFFFFFB','BFFFFFFFFFFFFFFFFFFFFB','BFFBBFFBBFFFFBBFFBBFFB','BFFBBFFBBFFFFBBFFBBFFB','BFFFFFFFFFFFFFFFFFFFFB','BFFFFFFFFFFFFFFFFFFFFB','BFFBBFFBBFFFFBBFFBBFFB','BFFBBFFBBFFFFBBFFBBFFB','BFFFFFFFFFFFFFFFFFFFFB','BFFFFFFFFFFFFFFFFFFFFB','BFFBBFFBBFFFFBBFFBBFFB','BFFBBFFBBFFFFBBFFBBFFB','BFFFFFFFFFFFFFFFFFFFFB','BFFFFFFFFFFFFFFFFFFFFB','BFFFFFFFFFDDFFFFFFFFFB','BBBBBBBBBBBBBBBBBBBBBB'],
+  pos:[[6,14],[15,14],[6,10],[15,10],[10,6]],boss:[10,2]},
+ {rows:['BBBBBBBBBBBBBBBBBBBBBB','BFFFFFFFFFFFFFFFFFFFFB','BFFFFFFFFFFFFFFFFFFFFB','BFFFFFFFFYYYYFFFFFFFFB','BFFFFFFFFFFFFFFFFFFFFB','BFFFFFFFFFFFFFFFFFFFFB','BFFFFFFFFFFFFFFFFFFFFB','BFFFFFFFFFFFFFFFFFFFFB','BFFFFFFFFFFFFFFFFFFFFB','BFFFFFFFFFFFFFFFFFFFFB','BFFFFFFFFFFFFFFFFFFFFB','BFFFFFFFFFFFFFFFFFFFFB','BFFFFFFFFFFFFFFFFFFFFB','BFFFFXFFFFFFFFFFFFFFFB','BFFFFFFFFFFFFFFFFFFFFB','BFFFFFFFFFFFFFFFFFFFFB','BFFFFFFFFFDDFFFFFFFFFB','BBBBBBBBBBBBBBBBBBBBBB'],
+  pos:[[6,14],[15,14],[6,10],[15,10],[10,6]],boss:[10,2]},
+ {rows:['BBBBBBBBBBBBBBBBBBBBBB','BFFFFFFFFFFFFFFFFFFFFB','BFFFFFFFFFFFFFFFFFFFFB','BFFFFFFFFFFFFFFFFFFFFB','BFFFFFFFFFFFFFFFFFFFFB','BFFFFFFFFFFFFFFFFFFFFB','BFFFFFFFFFFFFFFFFFFFFB','BFFFFFFFFFFFFFFFF^FFFB','BFFFFFFFFFFFFFFFF^FFFB','BFFFFF>v>v>v>v>vFFFFFB','BFFFFFFFFFFFFFFFFFFFFB','BFFFFFFFFFFFFFFFFFFFFB','BFFFFFFFFFFFFFFFFFFFFB','BFFFFFFFFFFFFFFFFFFFFB','BFFFFFFFFFFFFFFFFFFFFB','BFFFFFFFFFFFFFFFFFFFFB','BFFFFFFFFFDDFFFFFFFFFB','BBBBBBBBBBBBBBBBBBBBBB'],
+  pos:[[6,14],[15,14],[6,10],[15,10],[10,6]],boss:[10,2]},
+ {rows:['BBBBBBBBBBBBBBBBBBBBBB','BFFFFFFFFFFFFFFFFFFFFB','BFFFFFFFFFFFFFFFFFFFFB','BFFFFFFFFFFFFFFFFFFFFB','BFFFFFFFFFFFFFFFFFFFFB','BFFLLLLLLFFFFFFFFFFFFB','BFFLLLFLLFFFFFFFFFFFFB','BFFLLLFLLFFFFFFFFFFFFB','BFFFFFFFFFFFFFFFFFFFFB','BFFFFFFFFFFFFFFFFFFFFB','BFFFFFFFFFFFFLLFLLLFFB','BFFFFFFFFFFFFLLFLLLFFB','BFFFFFFFFFFFFLLFLLLFFB','BFFFFFFFFFFFFFFFFFFFFB','BFFFFFFFFFFFFFFFFFFFFB','BFFFFFFFFFFFFFFFFFFFFB','BFFFFFFFFFDDFFFFFFFFFB','BBBBBBBBBBBBBBBBBBBBBB'],
+  pos:[[6,14],[15,14],[6,10],[15,10],[10,6]],boss:[10,2]},
+ {rows:['BBBBBBBBBBBBBBBBBBBBBB','BFFFFFFFFFFFFFFFFFFFFB','BFFFFFFFFFFFFFFFFFFFFB','BFFFFFFFFFFFFFFFFFFFFB','BFFOOFFFFFFFFFFFFOOFFB','BFFFFFFFFFFFFFFFFFFFFB','BFFFFFFFFFFFFFFFFFFFFB','BFFFFFFFOOFFOOFFFFFFFB','BFFFFFFFFFFFFFFFFFFFFB','BFFFFFFFFFFFFFFFFFFFFB','BFFFFFFFOOFFOOFFFFFFFB','BFFFFFFFFFFFFFFFFFFFFB','BFFFFFFFFFFFFFFFFFFFFB','BFFOOFFFFFFFFFFFFOOFFB','BFFFFFFFFFFFFFFFFFFFFB','BFFFFFFFFFFFFFFFFFFFFB','BFFFFFFFFFDDFFFFFFFFFB','BBBBBBBBBBBBBBBBBBBBBB'],
+  pos:[[6,14],[15,14],[6,10],[15,10],[10,6]],boss:[10,2]},
+ {rows:['BBBBBBBBBBBBBBBBBBBBBB','BFFFFFFFFFFFFFFFFFFFFB','BFFFFFFFFFFFFFFFFFFFFB','BFFFFFFFFFFFFFFFFFFFFB','BFFFIIIIIIIIIIIIIIFFFB','BFFFIIIIIIIIIIIIIIFFFB','BFFFIIIIIFFFFIIIIIFFFB','BFFFIIIIIIIIIIIIIIFFFB','BFFFIIIIIIIIIIIIIIFFFB','BFFFIIIIIIIIIIIIIIFFFB','BFFFIIFIIIIIIIIFIIFFFB','BFFFIIIIIIIIIIIIIIFFFB','BFFFIIIIIIIIIIIIIIFFFB','BFFFFFFFFFFFFFFFFFFFFB','BFFFFFFFFFFFFFFFFFFFFB','BFFFFFFFFFFFFFFFFFFFFB','BFFFFFFFFFDDFFFFFFFFFB','BBBBBBBBBBBBBBBBBBBBBB'],
+  pos:[[6,14],[15,14],[6,10],[15,10],[10,6]],boss:[10,2]},
+ {rows:['BBBBBBBBBBBBBBBBBBBBBB','BFFFFFFFFFFFFFFFFFFFFB','BFFFFFFFFFFFFFFFFFFFFB','BFFFFFOFFFFFFFFOFFFFFB','BFFFFFFFFFIIFFFFFFFFFB','BFFFFFFFFFIIFFFFFFFFFB','BFFFFFFFFFFFFFFFFFFFFB','BFFFFFOFFFFFFFFOFFFFFB','BFFFFFFFFFFFFFFFFFFFFB','BFFFFFFFFFFFFFFFFFFFFB','BFFFFFFFFFFFFFFFFFFFFB','BFFFFFFFFOFFOFFFFFFFFB','BFFFFFFFFFFFFFFFFFFFFB','BFFFFFFFFFFFFFFFFFFFFB','BFFFFFFFFFFFFFFFFFFFFB','BFFFFFFFFFFFFFFFFFFFFB','BFFFFFFFFFDDFFFFFFFFFB','BBBBBBBBBBBBBBBBBBBBBB'],
+  pos:[[10,14],[6,11],[14,11],[6,5],[14,5]],boss:[10,2]}
+];
+
 
 // ---- Routen entstehen aus den alten Karten ----
 const ROUTES=MAPS.map((m,i)=>({
@@ -826,64 +887,100 @@ const ARENA_TR_NAMES=[
  ['Felswache Urd','Prüfer Stein','Wächterin Berg','Kletterin Ea','Veteran Thal'],
  ['','','','','']
 ];
-const CITY_NAMES=['Wiesenhain','Flüsterfurt','Kristallbucht','Donnerfeste',
+const CITY_NAMES=['Mooshain','Flüsterfurt','Kristallbucht','Donnerfeste',
   'Ascheort','Nebelhalt','Felsenwacht','Meisterstadt'];
-const ARENA_NAMES=['Wiesenhalle','Waldhalle','Küstenhalle','Steppenhalle',
+const ARENA_NAMES=['Mooshalle','Waldhalle','Küstenhalle','Steppenhalle',
   'Kraterhalle','Moorhalle','Felsenhalle','Liga-Halle'];
 
 // ---- Bewohner: Tipps, Geschenke, Schriftrollen ----
 const NPC_DATA=[
- [{n:'Alte Marta',t:['Willkommen in Wiesenhain!','Im Rasthaus links wirst du geheilt – und kannst einkaufen.','Die Halle rechts prüft, ob du zum Weiterziehen bereit bist.']},
-  {n:'Junge Nele',t:['Feuer schlägt Pflanze, Wasser schlägt Feuer, Pflanze schlägt Wasser.','Merk dir das, dann gewinnst du fast jeden Kampf am Anfang.']},
+ [{n:'Alte Marta',t:['Willkommen in Mooshain!','Im Rasthaus links wirst du geheilt – und kannst einkaufen.','Die Halle rechts prüft, ob du zum Weiterziehen bereit bist.']},
+  {n:'Junge Nele',t:['Feuer schlägt Pflanze, Wasser schlägt Feuer, Pflanze schlägt Wasser.','Merk dir das, dann gewinnst du fast jeden Kampf am Anfang.'],quest:'q0'},
   {n:'Händler Kurt',t:['Nimm das, für den Anfang.','Wirf die Kugel erst, wenn der Gegner kaum noch Kraft hat.'],gift:'superkugel',n2:3},
   {n:'Wanderer Ove',t:['Auf dem Weg nach Norden warten Trainer.','Sie sind stärker als das, was im Gras herumläuft.']}],
  [{n:'Förstersfrau Ida',t:['Der Wald verschluckt Geräusche – und manchmal ganze Kryptiden.','Geist-Attacken prallen an Normal-Kryptiden völlig ab. Umgekehrt genauso.']},
   {n:'Kräutersammler Jo',t:['Hier, gegen Gift und Lähmung.','Statusprobleme verschwinden nicht von selbst im Kampf.'],gift:'gegenmittel',n2:3},
-  {n:'Schreiber Anselm',t:['Ich habe eine alte Rolle gefunden. Für dich.','Lichtlanze verfehlt niemals ihr Ziel. Das ist mehr wert, als es klingt.'],gift:'r_licht',n2:1},
+  {n:'Schreiber Anselm',t:['Ich habe eine alte Rolle gefunden. Für dich.','Lichtlanze verfehlt niemals ihr Ziel. Das ist mehr wert, als es klingt.'],gift:'r_licht',n2:1,quest:'q1'},
   {n:'Kind Pim',t:['Im hohen Gras verstecken sich manchmal scheue Kryptiden!','Die hauen nach zwei Runden ab. Man muss schnell sein.']}],
  [{n:'Kapitänin Wilma',t:['Bei uns regnet es fast immer.','Regen macht Wasser-Attacken stärker und Feuer schwächer. Denk dran.']},
   {n:'Taucher Ben',t:['Krabbo ist Wasser und Stein zugleich.','Doppeltypen erben beide Schwächen – Pflanze trifft die doppelt hart.']},
   {n:'Netzflickerin Ru',t:['Für die weite Reise.','Tragitems sind mehr wert als ein Trank. Sie wirken jede Runde.'],gift:'ueberreste',n2:1},
-  {n:'Alter Seebär',t:['Attacken haben Punkte. Sind die leer, bleibt nur ein müder Stoß.','Im Rasthaus füllen sie sich wieder auf.']}],
+  {n:'Alter Seebär',t:['Attacken haben Punkte. Sind die leer, bleibt nur ein müder Stoß.','Im Rasthaus füllen sie sich wieder auf.'],quest:'q2'}],
  [{n:'Reiterin Hanne',t:['Der Sandsturm hier stärkt Stein und schwächt Pflanze.','Wer sich auskennt, wählt sein Team danach.']},
   {n:'Bogner Falk',t:['Elektro trifft Flug hart. Pflanze steckt es dagegen weg.','Viele glauben das Gegenteil – und verlieren.']},
-  {n:'Späherin Yun',t:['Nimm den. Er macht deine Kryptide schneller.','Wer zuerst schlägt, gewinnt oft, bevor es eng wird.'],gift:'schnellfeder',n2:1},
+  {n:'Späherin Yun',t:['Nimm den. Er macht deine Kryptide schneller.','Wer zuerst schlägt, gewinnt oft, bevor es eng wird.'],gift:'schnellfeder',n2:1,quest:'q3'},
   {n:'Hirte Bo',t:['Ein Kampf hat höchstens vier Attacken zur Auswahl.','Nimm nicht vier vom selben Typ. Deckung ist alles.']}],
- [{n:'Schmiedin Runa',t:['Hier, für harte Zeiten.','Ein Machtband macht jeden Angriff spürbar härter.'],gift:'machtband',n2:1},
+ [{n:'Schmiedin Runa',t:['Hier, für harte Zeiten.','Ein Machtband macht jeden Angriff spürbar härter.'],gift:'machtband',n2:1,quest:'q4'},
   {n:'Aschegräber Tom',t:['Metall-Kryptiden halten fast alles aus.','Aber Feuer und Kampf brechen ihren Panzer.']},
   {n:'Wirtin Cara',t:['Die Halle hier verlangt mehr Herausforderer als anderswo.','Je weiter du kommst, desto länger der Weg zum Hallenmeister.']},
   {n:'Bote Nils',t:['Man kann zurückgehen, weißt du?','Der Südausgang bringt dich auf den Weg, den du gekommen bist.']}],
  [{n:'Seherin Alma',t:['Nimm diese Rolle, Wanderer.','Sturmruf steigert die Initiative. Keine andere Attacke tut das.'],gift:'r_sturm',n2:1},
   {n:'Moorkundiger Veit',t:['Nebel stärkt Geist und schwächt Normal.','Hier unten kämpft es sich anders als überall sonst.']},
   {n:'Irrlicht-Jäger Ru',t:['Vergiftung frisst jede Runde an den Kräften.','Gegen zähe Gegner ist das oft besser als roher Schaden.']},
-  {n:'Grufti Odo',t:['Für die Geister unter deinen Freunden.','Aderlass saugt mehr Leben als jede andere Attacke.'],gift:'r_ader',n2:1}],
+  {n:'Grufti Odo',t:['Für die Geister unter deinen Freunden.','Aderlass saugt mehr Leben als jede andere Attacke.'],gift:'r_ader',n2:1,quest:'q5'}],
  [{n:'Bergwacht Silke',t:['Schneetreiben stärkt Eis und schwächt Pflanze.','Über den Pass kommt nur, wer vorbereitet ist.']},
-  {n:'Steinmetz Gorm',t:['Nimm den Schutzstein. Du wirst ihn brauchen.','Was danach kommt, verzeiht keine Fehler mehr.'],gift:'schutzstein',n2:1},
+  {n:'Steinmetz Gorm',t:['Nimm den Schutzstein. Du wirst ihn brauchen.','Was danach kommt, verzeiht keine Fehler mehr.'],gift:'schutzstein',n2:1,quest:'q6'},
   {n:'Kletterin Mai',t:['In der Halle warten fünf Herausforderer vor dem Meister.','Heil dich vorher. Es gibt keine Pause dazwischen.']},
   {n:'Alter Wirt',t:['Hinter dem Pass liegt die Meisterstadt.','Dort endet jede Reise – so oder so.']}],
  [{n:'Torwächterin Vala',t:['Die Liga-Halle nimmt nur Meister auf.','Fünf Meister, keine Pause. Deine AP füllen sich nicht zwischendurch.']},
-  {n:'Chronist Aldo',t:['Ich schreibe auf, wer die Liga bezwingt.','Bisher ist die Liste kurz.']},
+  {n:'Chronist Aldo',t:['Ich schreibe auf, wer die Liga bezwingt.','Bisher ist die Liste kurz.'],quest:'q7'},
   {n:'Heilerin Sona',t:['Nimm das. Weiter kann ich dir nicht helfen.','Ab hier zählt nur noch dein Team.'],gift:'hyperkugel',n2:5},
   {n:'Rivale Kai',t:['Also hast du es doch bis hierher geschafft.','Ich bin vor dir dran. Aber danach... viel Glück.']}]
 ];
 
+// ---- Kleine Gespräche für wiederholte Besuche: Gerüchte, Legenden, Tipps ----
+const CHAT_POOLS=[
+ ['Die Pilze im Unterholz sollen bei Vollmond leuchten – gesehen hat es noch niemand, aber alle schwören drauf.',
+  'Manchmal hört man morgens Glöckchen im Nebel über der Wiese. Die Alten nennen es das Läuten der Wichtel.',
+  'Der kleine Bach hinter dem Dorf soll nie zufrieren, selbst im tiefsten Winter nicht.',
+  'Wer genau hinschaut, findet manchmal frische Fährten im hohen Gras. Was da wohl durchgezogen ist?'],
+ ['Im Nebel verliert man leicht die Richtung. Manche Wanderer erzählen, der Wald selbst verschiebe die Wege.',
+  'Nachts hört man ein Flüstern zwischen den Bäumen – daher der Name, sagt man.',
+  'Alte Schriftrollen wie die von Anselm sollen überall im Unterholz verstreut liegen, wenn man nur sucht.',
+  'Manche Kryptiden hier zeigen sich nur, wenn niemand hinschaut. Typisch Geist-Art.'],
+ ['Der Leuchtturm brennt jede Nacht, auch wenn längst niemand mehr dort wohnt.',
+  'Bei Regen beißen die Wasser-Kryptiden besonders gut, sagen die Fischer.',
+  'Manche Muscheln am Strand sollen von versunkenen Schiffen stammen – niemand hat es je bewiesen.',
+  'Ein alter Seebär erzählt jedem, der es hören will, von einer Sturmflut vor Jahren.'],
+ ['Die alten Windmühlen drehen sich, auch wenn kein Wind geht. Erklären kann es dir keiner.',
+  'Der Sandsturm hier kommt manchmal ohne Vorwarnung. Halt dich an den Wegmarkierungen.',
+  'Reiterin Hanne behauptet, sie kenne jeden Grashalm in der Steppe beim Namen.',
+  'In klaren Nächten sieht man von den Hügeln aus bis zum Meer, heißt es.'],
+ ['Die Schmiede hier arbeitet Tag und Nacht – das Feuer im Krater geht nie aus.',
+  'Manche sagen, tief unten im Gestein schlummert etwas Uraltes.',
+  'Bei Sonnenschein werden die Feuer-Kryptiden hier fast unbezwingbar, pass auf.',
+  'Der Aschestaub soll Glück bringen, wenn er dir auf die Schultern fällt. Oder Pech. Man ist sich nicht einig.'],
+ ['Im Nebelmoor verirrt sich mancher – und manche kommen nie zurück, heißt es.',
+  'Die Irrlichter über dem Moor sollen verlorene Seelen sein. Folg ihnen besser nicht.',
+  'Grufti Odo kennt angeblich jede Ruine hier, zumindest behauptet er das.',
+  'Nachts wird es hier unheimlich still. Selbst die Geist-Kryptiden schweigen dann.'],
+ ['Über den Pass kommt nur, wer den Schnee nicht fürchtet.',
+  'In den Höhlen hier soll es Gänge geben, die niemand je ganz erkundet hat.',
+  'Steinmetz Gorm behauptet, er hätte einst eine Legende mit bloßen Händen aus dem Fels geschlagen.',
+  'Wenn der Wind über die Grate pfeift, klingt es fast wie Gesang.'],
+ ['Nur wer alle sieben Hallen bezwungen hat, betritt diesen Ort.',
+  'Man erzählt sich, Champion Vera habe noch nie einen Kampf verloren.',
+  'Die Liga-Halle wurde vor Generationen erbaut – aus Stein, der aus jeder Region stammt.',
+  'Wer hier antritt, kämpft nicht nur gegen Meister, sondern gegen die eigenen Zweifel.']
+];
+
 const AREA_DEFS=[
-  {name:'Grüne Wiese',cap:12,style:{grass:'#8fce7a',grass2:'#83c46e',tall:'#5faa52',tall2:'#4e9648',path:'#e2cda6',water:'#4a7fc1',tree:'#2e6338',tree2:'#3c7a46',trunk:'#5a4632',sky1:'#bfe6f5',sky2:'#8fce7a'},
-   roster:['flamko','aquappi','blattli','flatterix'],boss:'Wiesenwart Bruno'},
+  {name:'Mooswiese',cap:12,style:{grass:'#8fce7a',grass2:'#83c46e',tall:'#5faa52',tall2:'#4e9648',path:'#e2cda6',water:'#4a7fc1',tree:'#2e6338',tree2:'#3c7a46',trunk:'#5a4632',sky1:'#bfe6f5',sky2:'#8fce7a'},
+   roster:['flamko','aquappi','blattli','flatterix'],boss:'Wiesenwart Bruno',ambient:['fireflies','leaves','butterflies']},
   {name:'Flüsterwald',cap:18,style:{grass:'#79b869',grass2:'#6fae5f',tall:'#4e9648',tall2:'#3f7d3a',path:'#cdb488',water:'#3f6fa8',tree:'#245028',tree2:'#2e6338',trunk:'#4a3826',sky1:'#a8ceb0',sky2:'#79b869'},
-   roster:['blattli','spuki','giftling','flatterix'],boss:'Waldläuferin Mira'},
+   roster:['blattli','spuki','giftling','flatterix'],boss:'Waldläuferin Mira',ambient:['fog','rays','leaves']},
   {name:'Kristallküste',cap:24,style:{grass:'#8fd0b8',grass2:'#84c6ae',tall:'#4aa88c',tall2:'#3f9a7e',path:'#ece0b8',water:'#3f92c9',tree:'#2e7a68',tree2:'#3a8a76',trunk:'#6a5a44',sky1:'#bfeaf5',sky2:'#8fd0b8'},
-   roster:['aquappi','krabbo','zappzap','frosti'],boss:'Küstenkapitän Sören',weather:'regen'},
+   roster:['aquappi','krabbo','zappzap','frosti'],boss:'Küstenkapitän Sören',weather:'regen',ambient:['rain']},
   {name:'Donnersteppe',cap:30,style:{grass:'#cfc684',grass2:'#c4ba78',tall:'#a89a4a',tall2:'#988a3e',path:'#e2ceA0',water:'#4a7fc1',tree:'#7a7040',tree2:'#8a8050',trunk:'#5a4632',sky1:'#f0dfa8',sky2:'#cfc684'},
-   roster:['zappzap','flatterix','faustli','flamko'],boss:'Steppenreiterin Ilka',weather:'sturm'},
+   roster:['zappzap','flatterix','faustli','flamko'],boss:'Steppenreiterin Ilka',weather:'sturm',ambient:['dust','butterflies']},
   {name:'Aschekrater',cap:36,style:{grass:'#c98a6a',grass2:'#bd8060',tall:'#a85a3a',tall2:'#984e30',path:'#8a6a55',water:'#c25a3a',tree:'#6a4030',tree2:'#7a4c38',trunk:'#4a2c20',sky1:'#e8a878',sky2:'#c98a6a'},
-   roster:['flamko','brockel','erzling','faustli'],boss:'Kraterhexe Glut',weather:'sonne'},
+   roster:['flamko','brockel','erzling','faustli'],boss:'Kraterhexe Glut',weather:'sonne',ambient:['ash','rays']},
   {name:'Nebelmoor',cap:42,style:{grass:'#8a86b0',grass2:'#807ca6',tall:'#5a568c',tall2:'#4e4a7e',path:'#6f6a94',water:'#4a4a7a',tree:'#3a3660',tree2:'#46426e',trunk:'#2e2a48',sky1:'#a8a4c8',sky2:'#8a86b0'},
-   roster:['spuki','giftling','draklin','frosti'],boss:'Moorgeist Nebula',weather:'nebel'},
+   roster:['spuki','giftling','draklin','frosti'],boss:'Moorgeist Nebula',weather:'nebel',ambient:['fog','irrlichter']},
   {name:'Felsenpass',cap:48,style:{grass:'#b8ae98',grass2:'#aca28c',tall:'#8a7f6d',tall2:'#7a6f5d',path:'#cfbfa0',water:'#5a8ab8',tree:'#6a6050',tree2:'#7a7060',trunk:'#4a4238',sky1:'#d8cfc0',sky2:'#b8ae98'},
-   roster:['brockel','erzling','draklin','faustli'],boss:'Felsvogt Granit',weather:'schnee'},
+   roster:['brockel','erzling','draklin','faustli'],boss:'Felsvogt Granit',weather:'schnee',ambient:['snow']},
   {name:'Liga der Meister',cap:60,style:{grass:'#6a5f86',grass2:'#605578',tall:'#463c66',tall2:'#3e3459',path:'#544a70',water:'#3a3060',tree:'#302848',tree2:'#3a3054',trunk:'#241e38',sky1:'#8a7fa8',sky2:'#6a5f86'},
-   roster:FAMILIES,bosses:['Meisterin Aria','Meister Kwon','Meisterin Vega','Meister Oberon','Champion Vera']}
+   roster:FAMILIES,bosses:['Meisterin Aria','Meister Kwon','Meisterin Vega','Meister Oberon','Champion Vera'],ambient:['rays']}
 ];
 const TR_NAMES=[
   ['Schüler Tim','Wanderin Lea','Angler Udo','Sammlerin Fee','Azubi Nils'],
@@ -898,6 +995,13 @@ const TR_NAMES=[
 
 // ============================ MONSTER ============================
 function speciesForLevel(base,lvl){let c=base;while(DEX[c].evo&&lvl>=DEX[c].evoLvl)c=DEX[c].evo;return c;}
+// Manche Entwicklungen (z.B. Quest-Belohnungen) brauchen zusätzlich ein bestimmtes Tragitem
+function canEvolve(p){
+  const d=DEX[p.id];
+  if(!d.evo||p.level<d.evoLvl)return false;
+  if(d.evoItem&&p.held!==d.evoItem)return false;
+  return true;
+}
 function movesForLevel(id,lvl){
   const set=LEARNSETS[FAMILY_OF[id]]||LEARNSETS.flamko;const ids=[];
   set.forEach(p=>{if(p[0]<=lvl&&ids.indexOf(p[1])<0)ids.push(p[1]);});
@@ -942,6 +1046,7 @@ const mMoves=m=>m.moves.map(i=>MOVES[i]).filter(Boolean);
 // ============================ ZUSTAND ============================
 const state={team:[],box:[],leadIdx:0,bag:{kugel:5,trank:2},money:600,
   seen:[],caught:[],defeated:[],rivals:[],legends:[],found:[],scrolls:[],npcGifts:[],
+  events:[],npcSeen:[],legendClues:[],quests:{},
   pendingLearn:[],pendingEvo:[],area:0,loc:'stadt',px:10,py:15,
   champion:false,mode:'title',healed:false,battle:null,dexRewards:[]};
 
@@ -992,6 +1097,34 @@ function genTeam(roster,lvl,size){
     t.push({id:speciesForLevel(b,L),lvl:L});}
   return t;
 }
+const BOSS_FLAVOR={
+  0:{intro:'Wiesenwart Bruno gießt gerade seine Blumenbeete und blickt auf: "Ah, ein neues Gesicht! Zeig mir, was in dir steckt – aber pass auf meine Blumen auf."',
+     win:'Wiesenwart Bruno: "Hehe, stark! Genau wie meine Kürbisse in diesem Jahr. Zieh weiter, das Tor ist offen."'},
+  1:{intro:'Waldläuferin Mira löst sich lautlos aus dem Nebel: "Ich kenne jeden Pfad in diesem Wald. Zeig mir, ob du auch im Kampf so sicher bist."',
+     win:'Waldläuferin Mira: "Nicht schlecht. Der Wald hat dich angenommen – das Tor gibt dich frei."'},
+  2:{intro:'Küstenkapitän Sören mustert dich wie eine aufziehende Welle: "Ich hab schon Stürme überstanden, die größer waren als du. Zeig mir, was du kannst!"',
+     win:'Küstenkapitän Sören: "Har! Respekt. Die See gibt den Weg frei – und ich auch."'},
+  3:{intro:'Steppenreiterin Ilka lässt den Wind durch ihr Haar fahren: "Wer die Steppe durchqueren will, muss schneller sein als der Sturm. Bist du das?"',
+     win:'Steppenreiterin Ilka: "Schnell und stark. Der Wind trägt dich weiter – das Tor ist offen."'},
+  4:{intro:'Kraterhexe Glut blickt kaum von ihren brodelnden Tiegeln auf: "Noch jemand, der meine Forschung stört. Na gut – beweis mir wenigstens, dass es sich lohnt."',
+     win:'Kraterhexe Glut: "Interessant... sehr interessant. Du hast dir das Tor redlich verdient."'},
+  5:{intro:'Moorgeist Nebula erhebt sich aus dem Nebel wie eine alte Erzählung: "Viele kommen hierher, auf der Suche nach Legenden. Wenige verdienen es, eine zu werden."',
+     win:'Moorgeist Nebula: "Deine Geschichte wird man sich erzählen. Zieh weiter, Wanderer."'},
+  6:{intro:'Felsvogt Granit stemmt sich vor den Weg wie ein Fels selbst: "Der Pass gehört nur denen, die so unerschütterlich sind wie der Stein. Beweise es."',
+     win:'Felsvogt Granit: "Fest wie Granit. Der Pass ist frei – geh mit Bedacht weiter."'}
+};
+const LIGA_FLAVOR=[
+  {intro:'Meisterin Aria verbeugt sich mit einem Lächeln: "Ein Kampf ist wie ein Tanz – lass uns sehen, ob du den Takt hältst."',
+   win:'Meisterin Aria: "Wundervoll getanzt. Du hast dir die nächste Runde verdient."'},
+  {intro:'Meister Kwon verschränkt die Arme: "Disziplin schlägt Talent. Zeig mir deine."',
+   win:'Meister Kwon: "Diszipliniert gekämpft. Ich erkenne es an."'},
+  {intro:'Meisterin Vega mustert dich kühl: "Ich habe deine bisherigen Kämpfe studiert. Mal sehen, ob die Daten stimmen."',
+   win:'Meisterin Vega: "Meine Berechnungen lagen daneben. Selten, aber es passiert."'},
+  {intro:'Meister Oberon breitet die Arme aus: "Willkommen zur größten Show der Liga – mit mir in der Hauptrolle!"',
+   win:'Meister Oberon: "Bravo! Ein würdiger Mitspieler für meine Bühne."'},
+  {intro:'Champion Vera senkt kurz den Blick, dann sieht sie dir fest in die Augen: "Du hast einen langen Weg hinter dir. Zeig mir, ob er dich auch stark gemacht hat."',
+   win:'Champion Vera: "...Du hast gewonnen. Ehrlich verdient. Von nun an bist du die neue Champion."'}
+];
 const AREAS=AREA_DEFS.map((d,a)=>{
   const mp=MAPS[a],trainers=[];
   if(a<7){
@@ -1008,8 +1141,8 @@ const AREAS=AREA_DEFS.map((d,a)=>{
         const b=d.roster[i%d.roster.length];
         const L=d.cap-(i>=bossSize-2?0:i>=bossSize-4?1:2);
         return{id:speciesForLevel(b,Math.max(2,L)),lvl:Math.max(2,L)};}),pal:BOSS_PAL,lvl:d.cap,
-      intro:d.boss+' versperrt das Tor: "Nur wer mich besiegt, zieht weiter!"',
-      win:d.boss+': "Beeindruckend! Das Tor ist offen."'});
+      intro:(BOSS_FLAVOR[a]&&BOSS_FLAVOR[a].intro)||(d.boss+' versperrt das Tor: "Nur wer mich besiegt, zieht weiter!"'),
+      win:(BOSS_FLAVOR[a]&&BOSS_FLAVOR[a].win)||(d.boss+': "Beeindruckend! Das Tor ist offen."')});
   }else{
     d.bosses.forEach((nm,i)=>{
       const lvl=d.cap-8+i*2,sh=FAMILIES.slice().sort(()=>Math.random()-.5);
@@ -1019,8 +1152,8 @@ const AREAS=AREA_DEFS.map((d,a)=>{
         team:Array.from({length:size},(_,k)=>{
           const L=lvl+bonus-(k>=size-2?0:1);
           return{id:speciesForLevel(sh[k%sh.length],L),lvl:L};}),
-        pal:BOSS_PAL,lvl:lvl,intro:nm+': "Zeig mir, ob du der Liga würdig bist!"',
-        win:nm+': "Respekt... du bist besser als ich."'});
+        pal:BOSS_PAL,lvl:lvl,intro:(LIGA_FLAVOR[i]&&LIGA_FLAVOR[i].intro)||(nm+': "Zeig mir, ob du der Liga würdig bist!"'),
+        win:(LIGA_FLAVOR[i]&&LIGA_FLAVOR[i].win)||(nm+': "Respekt... du bist besser als ich."')});
     });
   }
   return Object.assign({},d,{trainers,map:mp});
@@ -1035,11 +1168,121 @@ const LEGEND_DATA={
   7:{id:'aeternis',title:'Wächter der Ewigkeit',
      intro:'Ein Licht ohne Ursprung erscheint...<br><b>AETERNIS</b>, Wächter der Ewigkeit, prüft dich!'}
 };
+// Hinweisketten: erst Gerücht + Spuren + Licht/Geräusch, dann erscheint das legendäre Kryptid
+const LEGEND_RUMORS={
+  1:'Manche behaupten, tief im Flüsterwald wache etwas Uraltes über die Bäume – SILVARION, wie die Alten es nennen.',
+  3:'Wenn der Himmel über der Steppe aufreißt, sprechen die Reiter von VOLTREX, dem Herrn der Stürme.',
+  5:'Im tiefsten Nebelmoor soll ein Schatten leben, den man UMBRAKOR nennt. Die meisten meiden diesen Teil des Moors.',
+  7:'Ganz oben, wo kein Pfad mehr hinführt, soll AETERNIS wachen – der Wächter der Ewigkeit selbst.'
+};
+const LEGEND_CLUE_TEXT={
+  1:{spuren:'👣 Riesige, uralte Fährten ziehen sich zwischen den Bäumen hindurch...',
+     licht:'✨ Ein grünliches Glimmen huscht durchs Unterholz und ist im nächsten Moment verschwunden.'},
+  3:{spuren:'👣 Tief in die Erde gepresste Abdrücke – als hätte hier ein gewaltiges Wesen gestanden, während der Sturm tobte.',
+     licht:'⚡ Ein greller Blitz zuckt aus heiterem Himmel, ohne jeden Donner.'},
+  5:{spuren:'👣 Schleifspuren im Schlamm, so groß wie ein ganzer Körper. Sie verlieren sich im Nebel.',
+     licht:'👻 Ein violetter Schimmer schwebt kurz über dem Moor, dann verschluckt ihn die Dunkelheit.'},
+  7:{spuren:'👣 Ein Abdruck im uralten Stein, zu groß für irgendein bekanntes Wesen.',
+     licht:'🌟 Ein Licht ohne erkennbare Quelle erhellt für einen Herzschlag die ganze Halle.'}
+};
+const LEGEND_CLUE_KINDS=['geruecht','spuren','licht'];
+function legendClueCount(a){
+  const have=state.legendClues||[];
+  return LEGEND_CLUE_KINDS.filter(k=>have.indexOf(a+':'+k)>=0).length;
+}
+function grantLegendClue(a,kind,msg){
+  state.legendClues=state.legendClues||[];
+  const key=a+':'+kind;
+  if(state.legendClues.indexOf(key)>=0)return;
+  state.legendClues.push(key);
+  toast(msg,3200);
+  if(legendClueCount(a)===LEGEND_CLUE_KINDS.length){
+    setTimeout(()=>toast('🌙 Du spürst deutlich: hier ist etwas Besonderes ganz in der Nähe...',3400),1200);
+  }
+  saveGame(true);
+}
 function legendFor(a){
   const d=LEGEND_DATA[a],mp=MAPS[a];
   if(!d||!mp||!mp.legend)return null;
   return{key:'legend-'+a,pos:mp.legend,id:d.id,title:d.title,intro:d.intro,
     lvl:AREA_DEFS[a].cap+3};
+}
+// ============================ NEBENQUESTS ============================
+// Manche Entwicklungen und ein neues Kryptid sind nur so zu bekommen.
+const QUESTS=[
+  {id:'q0',area:0,npcIdx:1,name:'Ein Blattli für Nele',
+   offer:'Ehrlich gesagt... ich hab nie ein eigenes Blattli gefangen. Traust du dich, eins für mich zu fangen?',
+   remind:'Hast du schon ein Blattli gefangen? Ich zähl auf dich!',
+   check:()=>state.caught.some(id=>FAMILY_OF[id]==='blattli'),
+   complete:'Du hast wirklich eins gefangen! Hier – das hat meine Oma mir gegeben. Sie sagte, es sei für "etwas Besonderes". Vielleicht weißt du, wofür.',
+   reward:{money:150,item:'wurzelkristall'}},
+  {id:'q1',area:1,npcIdx:2,name:'Die verlorenen Seiten',
+   offer:'Ich suche seit Jahren nach den fehlenden Seiten eines uralten Buches. Man munkelt, die Wächter des Waldes bewachen sie – seine Trainer stellen jeden auf die Probe, der sich nähert.',
+   remind:'Hast du dich schon allen Herausforderern des Flüsterwalds gestellt?',
+   check:()=>[0,1,2,3,4].every(s=>isDone('1-'+s)),
+   guardianWait:'Fünf Herausforderer bezwungen, gut. Aber irgendwo im tiefsten Wald wartet noch eine letzte Prüfung – der Wald selbst wird dich prüfen, bevor er sein Geheimnis preisgibt.',
+   complete:'Der Wald hat dich angenommen. Nimm das – du hast es dir wirklich verdient.',
+   legendGate:true,
+   reward:{money:200,item:'seelenanker'}},
+  {id:'q2',area:2,npcIdx:3,name:'Das Wesen im Riff',
+   offer:'Ich erzähl jedem vom Riesenwesen im Riff – aber glauben tut mir keiner. Bring mir wenigstens ein Krabbo, dann glaub ich dir, dass du klein anfängst wie ich einst.',
+   remind:'Schon ein Krabbo gefangen? Die Scheren erkennt man sofort.',
+   check:()=>state.caught.some(id=>FAMILY_OF[id]==='krabbo'),
+   complete:'Haha, da ist es ja! Nimm das als Dank, du Glückspilz.',
+   reward:{money:250,item:'schutzstein'}},
+  {id:'q3',area:3,npcIdx:2,name:'Wettlauf gegen den Sturm',
+   offer:'Nur die Schnellsten bestehen die Steppenhalle. Beweis es, und ich hab noch etwas für dich.',
+   remind:'Schon durch die Steppenhalle durch?',
+   check:()=>arenaCleared(3),
+   guardianWait:'Die Halle geschafft – stark. Aber draußen in der Steppe zieht ein Sturm auf, den nicht jeder übersteht. Der wartet noch auf dich.',
+   complete:'Der Sturm hat sich gelegt. Nimm das, du hast ihn wirklich bestanden.',
+   legendGate:true,
+   reward:{money:400,item:'fokusgurt'}},
+  {id:'q4',area:4,npcIdx:0,name:'Erz für die Esse',
+   offer:'Für ein neues Schutzschild brauch ich zwei Schutzsteine. Hast du welche über? Ich zahl\'s dir mit Zins zurück.',
+   remind:'Zwei Schutzsteine, weißt du noch? Ich brauch sie wirklich.',
+   check:()=>(state.bag.schutzstein||0)>=2,
+   onComplete:()=>{state.bag.schutzstein-=2;if(state.bag.schutzstein<=0)delete state.bag.schutzstein;},
+   complete:'Genau richtig! Hier, dafür kriegst du was Eigenes aus meiner Schmiede.',
+   reward:{money:350,item:'ueberreste'}},
+  {id:'q5',area:5,npcIdx:3,name:'Das Echo im Nebel',
+   offer:'Du spürst es auch, oder? Dieses Ziehen im Nebel. Ich hab mein Leben damit verbracht, den Hinweisen nachzugehen. Vielleicht schaffst du, was mir nie gelungen ist.',
+   remind:'Hast du schon alle drei Zeichen gefunden? Gerücht, Spur, Licht – erst dann zeigt es sich wirklich.',
+   check:()=>legendClueCount(5)>=LEGEND_CLUE_KINDS.length,
+   guardianWait:'Alle drei Zeichen gefunden... dann ist es fast so weit. Aber irgendetwas im Nebel wird dich zuerst prüfen wollen.',
+   complete:'Du hast es geschafft... Als das Licht verschwand, blieb etwas zurück. Ich glaube, es gehört jetzt zu dir.',
+   legendGate:true,
+   reward:{money:100,mon:'nebelwisp'}},
+  {id:'q6',area:6,npcIdx:1,name:'Kind des Schneefalls',
+   offer:'Frosti zeigt sich nur bei Schneefall, heißt es. Wenn du eins fängst, glaub ich das Gerücht vielleicht auch mal.',
+   remind:'Schon ein Frosti gefangen?',
+   check:()=>state.caught.some(id=>FAMILY_OF[id]==='frosti'),
+   complete:'Tatsächlich! Nimm das, du hast es dir verdient.',
+   reward:{money:300,item:'heilkraut'}},
+  {id:'q7',area:7,npcIdx:1,name:'Der erste Eintrag',
+   offer:'Ich schreibe auf, wer die Liga bezwingt. Bisher... niemand. Werd der Erste, der es auf meine Liste schafft.',
+   remind:'Noch nicht alle vier Meister vor Champion Vera bezwungen? Ich warte gespannt.',
+   check:()=>AREAS[7].trainers.slice(0,4).every(t=>isDone(t.key)),
+   guardianWait:'Vier Meister bezwungen – bemerkenswert. Aber ganz oben, jenseits der Halle, wartet noch etwas, das älter ist als die Liga selbst.',
+   complete:'Unglaublich... ich trag dich als Ersten ein. Nimm das – mehr hab ich nicht, aber es kommt von Herzen.',
+   legendGate:true,
+   reward:{money:500,item:'hyperkugel',itemN:3}}
+];
+function questFor(area,npcIdx){return QUESTS.find(q=>q.area===area&&q.npcIdx===npcIdx);}
+function grantQuestReward(q){
+  const r=q.reward||{};
+  let bits=[];
+  if(r.money){state.money+=r.money;bits.push('💰 '+r.money+' Münzen');}
+  if(r.item){addItem(r.item,r.itemN||1);bits.push('🎁 '+ITEMS[r.item].name+((r.itemN||1)>1?' ×'+r.itemN:''));}
+  if(r.mon){
+    const mon=makeMonster(r.mon,Math.max(5,AREA_DEFS[q.area].cap-5),false);
+    markSeen(mon.id);markCaught(mon.id);
+    if(state.team.length<6)state.team.push(mon);else state.box.push(mon);
+    bits.push('✨ <b>'+DEX[r.mon].name+'</b> schließt sich dir an');
+  }
+  if(q.onComplete)q.onComplete();
+  if(bits.length)toast('Belohnung: '+bits.join(' · '),3600);
+  saveGame(true);
 }
 const RIVAL_LINES=[
   ['Rivale Kai: "Da bist du ja! Mein Team ist längst weiter als deins."',
@@ -1092,6 +1335,7 @@ function snapshot(){
   return{v:6,team:state.team,box:state.box,leadIdx:state.leadIdx,bag:state.bag,money:state.money,
     seen:state.seen,caught:state.caught,defeated:state.defeated,rivals:state.rivals,
     legends:state.legends,found:state.found,scrolls:state.scrolls,npcGifts:state.npcGifts,
+    events:state.events,npcSeen:state.npcSeen,legendClues:state.legendClues,quests:state.quests,
     area:state.area,loc:state.loc,
     px:state.px,py:state.py,champion:state.champion,starter:state.starter,dexRewards:state.dexRewards};
 }
@@ -1123,6 +1367,7 @@ function applySave(s){
   state.seen=s.seen||[];state.caught=s.caught||[];state.defeated=s.defeated||[];state.rivals=s.rivals||[];
   state.legends=s.legends||[];state.found=s.found||[];state.scrolls=s.scrolls||[];
   state.npcGifts=s.npcGifts||[];state.loc=s.loc||'stadt';state._useItem=null;
+  state.events=s.events||[];state.npcSeen=s.npcSeen||[];state.legendClues=s.legendClues||[];state.quests=s.quests||{};
   state.pendingLearn=[];state.pendingEvo=[];state._equip=null;
   state.area=s.area||0;state.px=s.px==null?10:s.px;state.py=s.py==null?16:s.py;
   state.champion=!!s.champion;state.starter=s.starter||'flamko';state.dexRewards=s.dexRewards||[];
@@ -1218,8 +1463,8 @@ const TILE=22,VW=16,VH=16;
 const wctx=$('worldCanvas').getContext('2d');
 // Aktueller Ort: 'stadt' | 'route' | 'arena'
 function locRows(){
-  if(state.loc==='stadt')return CITY_ROWS;
-  if(state.loc==='arena')return ARENA_ROWS;
+  if(state.loc==='stadt')return CITY_DEFS[state.area].rows;
+  if(state.loc==='arena')return ARENA_DEFS[state.area].rows;
   return ROUTES[state.area].rows;
 }
 function locName(){
@@ -1234,7 +1479,7 @@ function arenaTrainers(){
   const a=state.area,n=arenaCount(),list=[];
   for(let i=0;i<n;i++){
     const lvl=Math.max(3,AREA_DEFS[a].cap-6+i*2);
-    list.push({key:'arena-'+a+'-'+i,pos:ARENA_POS[i],name:ARENA_TR_NAMES[a][i],
+    list.push({key:'arena-'+a+'-'+i,pos:ARENA_DEFS[a].pos[i],name:ARENA_TR_NAMES[a][i],
       kind:'normal',smart:a>=4,order:i,
       team:genTeam(AREA_DEFS[a].roster,lvl,Math.min(3,1+Math.floor(a/3))),
       pal:TR_PALS[i%5],lvl:lvl,
@@ -1245,10 +1490,10 @@ function arenaTrainers(){
 }
 function arenaBoss(){
   const t=AREAS[state.area].trainers.find(x=>x.key.endsWith('boss'))||AREAS[state.area].trainers[0];
-  return t?Object.assign({},t,{pos:ARENA_BOSS}):null;
+  return t?Object.assign({},t,{pos:ARENA_DEFS[state.area].boss}):null;
 }
 function ligaTrainers(){
-  return AREAS[7].trainers.map((t,i)=>Object.assign({},t,{pos:ARENA_POS[i]||ARENA_BOSS,order:i}));
+  return AREAS[7].trainers.map((t,i)=>Object.assign({},t,{pos:ARENA_DEFS[7].pos[i]||ARENA_DEFS[7].boss,order:i}));
 }
 // Alle Personen am aktuellen Ort
 function hierTrainers(){
@@ -1265,6 +1510,8 @@ function hierTrainers(){
     });
     const rv=rivalFor(state.area);
     if(rv&&r.rival)list.push(Object.assign({},rv,{pos:r.rival}));
+    const gu=activeGuardian();
+    if(gu)list.push(gu);
     return list;
   }
   return [];
@@ -1273,8 +1520,9 @@ function trainerAt(x,y){return hierTrainers().find(t=>t.pos&&t.pos[0]===x&&t.pos
 function npcAt(x,y){
   if(state.loc!=='stadt')return null;
   const liste=NPC_DATA[state.area]||[];
+  const posArr=CITY_DEFS[state.area].npcs;
   for(let i=0;i<liste.length;i++){
-    const p=CITY_NPCS_POS[i];
+    const p=posArr[i];
     if(p&&p[0]===x&&p[1]===y)return Object.assign({},liste[i],{idx:i});
   }
   return null;
@@ -1283,9 +1531,46 @@ const isDone=k=>state.defeated.indexOf(k)>=0;
 function bossCleared(){return arenaCleared(state.area);}
 function isGate(x,y){return tileAt(x,y)==='G';}
 function activeLegend2(){return state.loc==='route'?activeLegend():null;}
+// Wächter-Trainer: führt das jeweilige legendäre Kryptid im Team. Erst nach seiner
+// Niederlage wird das wilde Legendäre auf der Karte überhaupt sichtbar.
+const GUARDIAN_DATA={
+  1:{name:'Hüterin Sylva',
+     intro:'Hüterin Sylva tritt aus dem dichtesten Teil des Waldes: "Du hast die Zeichen gelesen. Aber der Wald prüft dich, bevor er dir vertraut."',
+     win:'Hüterin Sylva: "...Der Wald hat entschieden. Geh weiter, wenn du bereit bist."',
+     allies:['blattlon','spukrator']},
+  3:{name:'Sturmwächter Kael',
+     intro:'Sturmwächter Kael blickt in die aufziehenden Wolken: "Der Sturm wählt seine Zeugen selbst. Zeig mir, ob du einer bist."',
+     win:'Sturmwächter Kael: "...Der Sturm ist zufrieden. Geh."',
+     allies:['zapptitan','flatterax']},
+  5:{name:'Nebelweberin Yssa',
+     intro:'Nebelweberin Yssa erscheint wie aus dem Nichts: "Wer bis hierher kommt, hat das Recht auf eine letzte Prüfung verdient."',
+     win:'Nebelweberin Yssa: "...Der Nebel öffnet sich für dich."',
+     allies:['giftkralle','drakon']},
+  7:{name:'Wächter der Krone',
+     intro:'Ein namenloser Wächter versperrt den letzten Weg: "Nur wer alles hinter sich gelassen hat, darf weiter."',
+     win:'Wächter der Krone: "...Geh. Was jetzt kommt, liegt zwischen dir und der Ewigkeit."',
+     allies:['draconar','erzkoloss']}
+};
+const GUARDIAN_QUEST_ID={1:'q1',3:'q3',5:'q5',7:'q7'};
+function activeGuardian(){
+  if(state.loc!=='route')return null;
+  const a=state.area,gd=GUARDIAN_DATA[a];
+  if(!gd||isDone('guardian-'+a))return null;
+  if((state.quests||{})[GUARDIAN_QUEST_ID[a]]!=='guardian')return null;
+  const L=legendFor(a);if(!L)return null;
+  const cap=AREA_DEFS[a].cap;
+  const team=gd.allies.map(id=>({id,lvl:cap})).concat([{id:L.id,lvl:cap+1}]);
+  return{key:'guardian-'+a,pos:L.pos,name:gd.name,kind:'boss',smart:true,dbl:false,
+    team,pal:BOSS_PAL,lvl:cap+1,intro:gd.intro,win:gd.win};
+}
 function activeLegend(){
   const L=legendFor(state.area);
-  return(L&&state.legends.indexOf(L.key)<0)?L:null;
+  if(!L||state.legends.indexOf(L.key)>=0)return null;
+  if(LEGEND_DATA[state.area]){
+    if(legendClueCount(state.area)<LEGEND_CLUE_KINDS.length)return null;
+    if(GUARDIAN_DATA[state.area]&&!isDone('guardian-'+state.area))return null;
+  }
+  return L;
 }
 function nordOffen(){
   // Aus der Stadt auf die Route: immer offen (dort trainiert man)
@@ -1300,7 +1585,8 @@ function arenaCleared(a){
 }
 function isBlocked(x,y){
   const t=tileAt(x,y);
-  if(t==='T'||t==='W'||t==='B')return true;
+  if(t==='T'||t==='W'||t==='B'||t==='O'||t==='U'||t==='L')return true;
+  if(t==='Y'&&!arenaGateOpen)return true;
   const tr=trainerAt(x,y);
   if(tr&&!isDone(tr.key))return true;
   if(npcAt(x,y))return true;
@@ -1383,6 +1669,71 @@ function drawTile(t,sx,sy,gx,gy){
       wctx.fillStyle=shade(S.tree,.75);
       wctx.beginPath();wctx.arc(sx+14+sway,sy+12,3.4,0,Math.PI*2);wctx.fill();
       break;}
+    case 'K':{   // Holzbrücke (über Wasser)
+      wctx.fillStyle=S.water;wctx.fillRect(sx,sy,TILE+1,TILE+1);
+      wctx.fillStyle='#a07a4a';wctx.fillRect(sx,sy+3,TILE+1,TILE-6);
+      wctx.fillStyle='#8a6238';
+      for(let i=0;i<5;i++)wctx.fillRect(sx+1+i*4,sy+3,2,TILE-6);
+      wctx.fillStyle='#6a4a2a';wctx.fillRect(sx,sy+2,TILE+1,2);wctx.fillRect(sx,sy+TILE-4,TILE+1,2);
+      break;}
+    case 'L':{   // Lava
+      wctx.fillStyle='#7a1f10';wctx.fillRect(sx,sy,TILE+1,TILE+1);
+      const lph=wfx.t*1.4+gx*.6+gy*.4;
+      wctx.fillStyle='#c9401a';
+      wctx.fillRect(sx+3+Math.sin(lph)*2,sy+6,7,3);
+      wctx.fillRect(sx+11+Math.sin(lph+1.9)*2,sy+13,7,3);
+      wctx.fillStyle='#f0a030';
+      const glow=Math.sin(wfx.t*2.6+gx+gy)*.5+.5;
+      wctx.fillRect(sx+6+Math.sin(lph+.6)*2,sy+10,4,2);
+      wctx.fillStyle='rgba(255,180,70,'+(.15+glow*.25)+')';
+      wctx.fillRect(sx,sy,TILE+1,TILE+1);
+      break;}
+    case 'O':{   // Stein
+      wctx.fillStyle=base;wctx.fillRect(sx,sy,TILE+1,TILE+1);
+      wctx.fillStyle='rgba(20,14,30,.2)';
+      wctx.beginPath();wctx.ellipse(sx+11,sy+18,7,2.2,0,0,Math.PI*2);wctx.fill();
+      wctx.fillStyle='#9a9088';
+      wctx.beginPath();wctx.ellipse(sx+11,sy+13,8,6,0,0,Math.PI*2);wctx.fill();
+      wctx.fillStyle='#7a726a';
+      wctx.beginPath();wctx.ellipse(sx+13,sy+15,5,3.6,0,0,Math.PI*2);wctx.fill();
+      wctx.fillStyle='#b8b0a6';
+      wctx.beginPath();wctx.ellipse(sx+8,sy+10,3,2.2,.4,0,Math.PI*2);wctx.fill();
+      break;}
+    case 'U':{   // Busch
+      wctx.fillStyle=base;wctx.fillRect(sx,sy,TILE+1,TILE+1);
+      wctx.fillStyle='rgba(20,14,30,.2)';
+      wctx.beginPath();wctx.ellipse(sx+11,sy+18,7,2.2,0,0,Math.PI*2);wctx.fill();
+      const bsw=Math.sin(wfx.t*1.8+gx*.9)*.6;
+      wctx.fillStyle=S.tree2;
+      wctx.beginPath();wctx.arc(sx+7+bsw,sy+13,5,0,Math.PI*2);wctx.fill();
+      wctx.beginPath();wctx.arc(sx+15+bsw,sy+13,5,0,Math.PI*2);wctx.fill();
+      wctx.fillStyle=S.tree;
+      wctx.beginPath();wctx.arc(sx+11+bsw,sy+11,5.6,0,Math.PI*2);wctx.fill();
+      wctx.fillStyle=shade(S.tree,1.3);
+      wctx.beginPath();wctx.arc(sx+9+bsw,sy+9,2.2,0,Math.PI*2);wctx.fill();
+      break;}
+    case 'M':{   // Blumenwiese
+      wctx.fillStyle=base;wctx.fillRect(sx,sy,TILE+1,TILE+1);
+      const petals=['#f2789c','#f2e8a0','#c9a0f2','#9adcf0'];
+      const spots=[[5,6],[15,5],[10,12],[16,14],[6,15]];
+      spots.forEach((p,i)=>{
+        const bob=Math.sin(wfx.t*2+gx+gy+i)*.6;
+        wctx.fillStyle=shade(S.tall,1.1);wctx.fillRect(sx+p[0]+1,sy+p[1]+bob+2,1,3);
+        wctx.fillStyle=petals[(i+gx+gy)%petals.length];
+        wctx.fillRect(sx+p[0],sy+p[1]+bob,3,3);
+      });
+      break;}
+    case 'V':{   // Hügel
+      wctx.fillStyle=base;wctx.fillRect(sx,sy,TILE+1,TILE+1);
+      wctx.fillStyle=shade(S.grass2,.85);
+      wctx.beginPath();wctx.ellipse(sx+11,sy+14,11,7,0,0,Math.PI*2);wctx.fill();
+      wctx.fillStyle=shade(S.grass,1.18);
+      wctx.beginPath();wctx.ellipse(sx+9,sy+10,7,4.6,0,0,Math.PI*2);wctx.fill();
+      if(r>.85){
+        wctx.fillStyle=S.tall;
+        wctx.fillRect(sx+14+Math.sin(wfx.t*2+gx)*1,sy+8,2,4);
+      }
+      break;}
     case 'B':{   // Gebäudewand
       wctx.fillStyle=shade(S.path,.72);wctx.fillRect(sx,sy,TILE+1,TILE+1);
       wctx.fillStyle=shade(S.path,.62);
@@ -1393,6 +1744,47 @@ function drawTile(t,sx,sy,gx,gy){
     case 'F':{   // Hallenboden
       wctx.fillStyle=((gx+gy)%2)?shade(S.path,.9):shade(S.path,.82);
       wctx.fillRect(sx,sy,TILE+1,TILE+1);
+      break;}
+    case 'I':{   // Eisfläche (Rätsel: rutscht in Bewegungsrichtung weiter)
+      wctx.fillStyle='#cdeaf5';wctx.fillRect(sx,sy,TILE+1,TILE+1);
+      wctx.fillStyle='rgba(255,255,255,.55)';
+      wctx.fillRect(sx+2,sy+2,TILE-6,2);
+      wctx.strokeStyle='rgba(150,200,220,.6)';wctx.lineWidth=1;
+      wctx.beginPath();wctx.moveTo(sx+3,sy+TILE-4);wctx.lineTo(sx+9,sy+TILE-11);wctx.lineTo(sx+15,sy+TILE-5);wctx.stroke();
+      wctx.fillStyle='rgba(210,240,250,.5)';wctx.fillRect(sx,sy,TILE+1,TILE+1);
+      break;}
+    case '^': case 'v': case '<': case '>':{   // Windfeld (Rätsel: schiebt automatisch in Pfeilrichtung)
+      wctx.fillStyle=shade(S.path,.86);wctx.fillRect(sx,sy,TILE+1,TILE+1);
+      const ph=(wfx.t*1.6+gx*.4+gy*.4)%1;
+      wctx.strokeStyle='rgba(255,255,255,.65)';wctx.lineWidth=2;
+      for(let i=0;i<3;i++){
+        const o=((ph+i/3)%1)*TILE;
+        wctx.beginPath();
+        if(t==='^'){wctx.moveTo(sx+6,sy+TILE-o);wctx.lineTo(sx+11,sy+TILE-o-6);wctx.lineTo(sx+16,sy+TILE-o);}
+        else if(t==='v'){wctx.moveTo(sx+6,sy+o);wctx.lineTo(sx+11,sy+o+6);wctx.lineTo(sx+16,sy+o);}
+        else if(t==='<'){wctx.moveTo(sx+TILE-o,sy+6);wctx.lineTo(sx+TILE-o-6,sy+11);wctx.lineTo(sx+TILE-o,sy+16);}
+        else{wctx.moveTo(sx+o,sy+6);wctx.lineTo(sx+o+6,sy+11);wctx.lineTo(sx+o,sy+16);}
+        wctx.stroke();
+      }
+      break;}
+    case 'X':{   // Schalter (Rätsel: öffnet/schließt das Tor an anderer Stelle)
+      wctx.fillStyle=shade(S.path,.82);wctx.fillRect(sx,sy,TILE+1,TILE+1);
+      wctx.fillStyle='#6a6050';wctx.beginPath();wctx.arc(sx+11,sy+12,8,0,Math.PI*2);wctx.fill();
+      wctx.fillStyle=arenaGateOpen?'#5aa464':'#c94f6d';
+      const pulse=Math.sin(wfx.t*3)*.5+.5;
+      wctx.beginPath();wctx.arc(sx+11,sy+11,4+pulse*1.2,0,Math.PI*2);wctx.fill();
+      break;}
+    case 'Y':{   // Tor/Barriere (schließt sich per Schalter)
+      wctx.fillStyle=shade(S.path,.82);wctx.fillRect(sx,sy,TILE+1,TILE+1);
+      if(arenaGateOpen){
+        wctx.fillStyle='rgba(90,164,100,.3)';wctx.fillRect(sx+2,sy+2,TILE-4,TILE-4);
+        wctx.strokeStyle='rgba(90,164,100,.7)';wctx.strokeRect(sx+2,sy+2,TILE-4,TILE-4);
+      }else{
+        const pulse=Math.sin(wfx.t*4+gx)*.5+.5;
+        wctx.fillStyle='rgba(201,79,109,'+(.35+pulse*.25)+')';wctx.fillRect(sx,sy,TILE+1,TILE+1);
+        wctx.fillStyle='#8a6238';
+        for(let i=0;i<4;i++)wctx.fillRect(sx+2,sy+2+i*5,TILE-4,2);
+      }
       break;}
     case 'A':{   // Arenatür
       wctx.fillStyle=shade(S.path,.72);wctx.fillRect(sx,sy,TILE+1,TILE+1);
@@ -1435,6 +1827,116 @@ function drawTile(t,sx,sy,gx,gy){
       wctx.fillStyle=base;wctx.fillRect(sx,sy,TILE+1,TILE+1);
   }
 }
+// ---- Natur-Ambiente: Wetter- und Stimmungseffekte pro Gebiet ----
+// Alle Partikel werden relativ zur Kamera (Weltposition) verschoben statt fest am
+// Bildschirm zu kleben – sonst wirkt es, als würden sie dem Spieler folgen.
+const wrap=(v,n)=>((v%n)+n)%n;
+function fxRain(W,H,ox,oy){
+  wctx.fillStyle='rgba(60,80,120,.07)';wctx.fillRect(0,0,W,H);
+  wctx.strokeStyle='rgba(210,225,255,.55)';wctx.lineWidth=1.3;
+  for(let i=0;i<44;i++){
+    const x=wrap(h2(i,31)*W+wfx.t*36-ox,W+20)-10;
+    const y=wrap(h2(i,32)*H+wfx.t*280-oy,H);
+    wctx.beginPath();wctx.moveTo(x,y);wctx.lineTo(x-3,y+11);wctx.stroke();
+  }
+}
+function fxSnow(W,H,ox,oy){
+  wctx.fillStyle='rgba(255,255,255,.92)';
+  for(let i=0;i<30;i++){
+    const speed=16+h2(i,33)*14;
+    const bx=h2(i,34)*W,sway=Math.sin(wfx.t*1.1+i*1.7)*7;
+    const x=wrap(bx+sway-ox,W);
+    const y=wrap(h2(i,35)*H+wfx.t*speed-oy,H);
+    const r=1.1+h2(i,36)*1.5;
+    wctx.beginPath();wctx.arc(x,y,r,0,Math.PI*2);wctx.fill();
+  }
+}
+function fxFog(W,H,ox,oy){
+  wctx.fillStyle='rgba(215,218,232,.10)';wctx.fillRect(0,0,W,H);
+  for(let i=0;i<5;i++){
+    const y=wrap(50+i*66+Math.sin(wfx.t*.3+i)*10-oy,H+140)-70;
+    const x=wrap((h2(i,37)*W)+wfx.t*(9+i*3)-ox,W+180)-90;
+    const grad=wctx.createRadialGradient(x,y,10,x,y,130);
+    grad.addColorStop(0,'rgba(224,227,238,.30)');grad.addColorStop(1,'rgba(224,227,238,0)');
+    wctx.fillStyle=grad;wctx.fillRect(x-130,y-70,260,140);
+  }
+}
+function fxLeaves(W,H,c1,c2,ox,oy){
+  for(let i=0;i<13;i++){
+    const speed=20+h2(i,38)*14;
+    const y=wrap(h2(i,39)*H+wfx.t*speed-oy,H);
+    const sway=Math.sin(wfx.t*1.3+i*1.4)*15;
+    const x=wrap(h2(i,40)*W+sway-ox,W);
+    wctx.save();wctx.translate(x,y);wctx.rotate(wfx.t*1.5+i);
+    wctx.fillStyle=(i%2===0)?c1:c2;wctx.fillRect(-3,-1.4,6,2.8);
+    wctx.restore();
+  }
+}
+function fxRays(W,H,ox,oy){
+  for(let i=0;i<4;i++){
+    const bx=wrap(W*(.12+i*.26)+Math.sin(wfx.t*.22+i)*10-ox,W+80)-40;
+    const w=24+Math.sin(wfx.t*.4+i*2)*6;
+    const alpha=.05+(Math.sin(wfx.t*.5+i)*.5+.5)*.05;
+    const grad=wctx.createLinearGradient(bx,0,bx+40,H);
+    grad.addColorStop(0,'rgba(255,248,210,'+(alpha+.06)+')');grad.addColorStop(1,'rgba(255,248,210,0)');
+    wctx.fillStyle=grad;wctx.beginPath();
+    wctx.moveTo(bx-w/2,0);wctx.lineTo(bx+w/2,0);wctx.lineTo(bx+w/2+46,H);wctx.lineTo(bx-w/2+46,H);
+    wctx.closePath();wctx.fill();
+  }
+}
+function fxDust(W,H,overlay,particle,ox,oy){
+  wctx.fillStyle=overlay;wctx.fillRect(0,0,W,H);
+  wctx.fillStyle=particle;
+  for(let i=0;i<24;i++){
+    const speed=32+h2(i,41)*42;
+    const x=wrap(h2(i,42)*W+wfx.t*speed-ox,W+40)-20;
+    const y=wrap(h2(i,43)*H+Math.sin(wfx.t*2+i)*6-oy,H);
+    const r=.9+h2(i,44)*1.7;
+    wctx.beginPath();wctx.arc(x,y,r,0,Math.PI*2);wctx.fill();
+  }
+}
+function fxFireflies(W,H,col,ox,oy){
+  for(let i=0;i<10;i++){
+    const bx=wrap(h2(i,45)*W-ox,W),by=wrap((.28+h2(i,46)*.6)*H-oy,H);
+    const x=bx+Math.sin(wfx.t*.8+i*2)*17;
+    const y=by+Math.cos(wfx.t*.6+i*1.7)*13;
+    const pulse=Math.sin(wfx.t*3+i*3)*.5+.5;
+    wctx.fillStyle='rgba('+col+','+(.25+pulse*.55)+')';
+    wctx.beginPath();wctx.arc(x,y,1.5+pulse*1.2,0,Math.PI*2);wctx.fill();
+  }
+}
+function fxButterflies(W,H,ox,oy){
+  const cols=['#f2e8a0','#f2789c','#f0f0f0','#e8b93c'];
+  for(let i=0;i<8;i++){
+    const bx=wrap(h2(i,47)*W-ox,W),by=wrap((.2+h2(i,48)*.65)*H-oy,H);
+    const x=bx+Math.sin(wfx.t*1.1+i*2.1)*14+Math.sin(wfx.t*3.3+i)*3;
+    const y=by+Math.sin(wfx.t*2.1+i*1.3)*8;
+    const wing=Math.sin(wfx.t*9+i*4)*2.4;
+    wctx.fillStyle=cols[i%cols.length];
+    wctx.beginPath();wctx.ellipse(x-wing,y,2.4,1.6,.5,0,Math.PI*2);wctx.fill();
+    wctx.beginPath();wctx.ellipse(x+wing,y,2.4,1.6,-.5,0,Math.PI*2);wctx.fill();
+  }
+}
+function drawAmbient(camPX,camPY){
+  if(state.loc==='arena')return;
+  const list=areaDef().ambient;
+  if(!list||!list.length)return;
+  const W=VW*TILE,H=VH*TILE,S=areaDef().style;
+  wctx.save();
+  list.forEach(fx=>{
+    if(fx==='rain')fxRain(W,H,camPX,camPY);
+    else if(fx==='snow')fxSnow(W,H,camPX,camPY);
+    else if(fx==='fog')fxFog(W,H,camPX,camPY);
+    else if(fx==='leaves')fxLeaves(W,H,S.tree,S.tree2,camPX,camPY);
+    else if(fx==='rays')fxRays(W,H,camPX,camPY);
+    else if(fx==='dust')fxDust(W,H,'rgba(120,95,55,.06)','rgba(190,160,115,.55)',camPX,camPY);
+    else if(fx==='ash')fxDust(W,H,'rgba(120,40,20,.07)','rgba(90,80,80,.6)',camPX,camPY);
+    else if(fx==='fireflies')fxFireflies(W,H,'228,224,120',camPX,camPY);
+    else if(fx==='irrlichter')fxFireflies(W,H,'186,140,232',camPX,camPY);
+    else if(fx==='butterflies')fxButterflies(W,H,camPX,camPY);
+  });
+  wctx.restore();
+}
 function drawWorld(){
   const rows=locRows();
   // interpolierte Spielerposition für flüssiges Laufen
@@ -1467,7 +1969,7 @@ function drawWorld(){
   // Bewohner zeichnen
   if(state.loc==='stadt'){
     (NPC_DATA[state.area]||[]).forEach((np,i)=>{
-      const p2=CITY_NPCS_POS[i];if(!p2)return;
+      const p2=CITY_DEFS[state.area].npcs[i];if(!p2)return;
       const sx=Math.round((p2[0]-camX)*TILE),sy=Math.round((p2[1]-camY)*TILE);
       if(sx<-TILE*2||sy<-TILE*2||sx>VW*TILE+TILE||sy>VH*TILE+TILE)return;
       const bob=Math.sin(wfx.t*1.5+i)*.8;
@@ -1495,7 +1997,10 @@ function drawWorld(){
   // Spieler mit Schrittwippen
   const walking=!!wfx.anim;
   const stepBob=walking?Math.abs(Math.sin(wfx.anim.k*Math.PI))*-2:0;
+  drawSighting();
   paintHuman(wctx,HERO_PAL,Math.round((ppx-camX)*TILE)-1,Math.round((ppy-camY)*TILE)-1+stepBob,2);
+  // Natur-Ambiente (Regen, Schnee, Nebel, Blätter, Lichtstrahlen, Glühwürmchen...)
+  drawAmbient(camX*TILE,camY*TILE);
   // HUD
   const hg=wctx.createLinearGradient(0,0,0,22);
   hg.addColorStop(0,'rgba(28,20,44,.85)');hg.addColorStop(1,'rgba(28,20,44,.6)');
@@ -1541,7 +2046,146 @@ function healAll(){
   state.team.concat(state.box).forEach(m=>{m.hp=m.maxHp;m.status=null;restoreAP(m);});
 }
 
+// ============================ ZUFALLSEREIGNISSE ============================
+// Nicht jede Begegnung ist ein Kampf: Fußspuren, Geräusche, Händler, Ruinen, Höhlen, seltene Pflanzen, Schätze.
+const EVENT_TILES=new Set(['.',',','M','V','P']);
+const EVENT_POOL=[
+  {kind:'spuren',w:3},{kind:'geraeusch',w:3},{kind:'pflanze',w:2},
+  {kind:'ruine',w:1},{kind:'hoehle',w:1},{kind:'haendler',w:1},{kind:'schatz',w:1}
+];
+const RARE_POOL=['heilkraut','ueberreste','schutzstein','schnellfeder','fokusgurt','machtband'];
+const SOUND_LINES=[
+  'Irgendwo im Dickicht raschelt es – und wird gleich wieder still.',
+  'Ein leises Rufen hallt durch die Ferne. Niemand ist zu sehen.',
+  'Für einen Moment glaubst du, Schritte hinter dir zu hören.',
+  'Ein Windhauch trägt einen fremden Ton heran, dann ist er wieder weg.'
+];
+function runEvent(kind,x,y){
+  const a=state.area;
+  if(kind==='spuren'){
+    const roster=AREAS[a].roster;
+    const unseen=roster.filter(id=>state.seen.indexOf(id)<0);
+    if(unseen.length){
+      const id=unseen[Math.floor(h2(x+3,y+500+a)*unseen.length)];
+      state.seen.push(id);
+      toast('👣 Frische Fährten im Boden... <b>'+DEX[id].name+'</b> war hier!',3000);
+    }else{
+      toast('👣 Frische Fährten ziehen sich durchs Gras – doch die Spur verliert sich.',2600);
+    }
+  }else if(kind==='geraeusch'){
+    const i=Math.floor(h2(x+7,y+700+a)*SOUND_LINES.length);
+    toast('👂 '+SOUND_LINES[Math.min(SOUND_LINES.length-1,i)],2800);
+  }else if(kind==='pflanze'){
+    const i=Math.floor(h2(x+9,y+900+a)*RARE_POOL.length);
+    const it=RARE_POOL[Math.min(RARE_POOL.length-1,i)];
+    addItem(it,1);
+    toast('🌿 Am Wegesrand wächst eine seltene Pflanze: <b>'+ITEMS[it].name+'</b>!',3000);
+  }else if(kind==='ruine'){
+    const g=20+Math.floor(h2(x+11,y+1100+a)*60);
+    state.money+=g;
+    toast('🏛️ Zwischen bemoosten Steinen findest du die Reste einer alten Ruine... <b>+'+g+' Münzen</b> lagen vergessen zwischen den Trümmern.',3200);
+  }else if(kind==='hoehle'){
+    toast('🕳️ Ein dunkler Höhleneingang öffnet sich im Fels. Ein kalter Luftzug weht heraus – vielleicht ein andermal.',3200);
+  }else if(kind==='haendler'){
+    addItem('kugel',2);
+    toast('🧳 Ein wandernder Händler kreuzt deinen Weg: "Nimm das, für unterwegs!" <b>+2 Fangkugeln</b>',3200);
+  }else if(kind==='schatz'){
+    const g=40+Math.floor(h2(x+13,y+1300+a)*100);
+    state.money+=g;
+    addItem('supertrank',1);
+    toast('💰 Du entdeckst eine vergrabene Schatztruhe! <b>+'+g+' Münzen</b> und ein Supertrank.',3200);
+  }else if(kind==='legendspur'){
+    const txt=(LEGEND_CLUE_TEXT[a]&&LEGEND_CLUE_TEXT[a].spuren)||'👣 Riesige, unbekannte Fährten ziehen sich durch das Gelände...';
+    grantLegendClue(a,'spuren',txt);
+  }else if(kind==='legendlicht'){
+    const txt=(LEGEND_CLUE_TEXT[a]&&LEGEND_CLUE_TEXT[a].licht)||'✨ Ein seltsames Leuchten erscheint kurz und verschwindet wieder.';
+    grantLegendClue(a,'licht',txt);
+  }
+  saveGame(true);
+}
+// Legende in diesem Gebiet: fehlende Hinweisarten als zusätzliche Zufallsereignisse anbieten
+function eventPoolFor(a){
+  const pool=EVENT_POOL.slice();
+  if(LEGEND_DATA[a]&&legendClueCount(a)<LEGEND_CLUE_KINDS.length){
+    const have=state.legendClues||[];
+    if(have.indexOf(a+':spuren')<0)pool.push({kind:'legendspur',w:1.5});
+    if(have.indexOf(a+':licht')<0)pool.push({kind:'legendlicht',w:1.5});
+  }
+  return pool;
+}
+function checkRandomEvent(x,y){
+  if(state.loc!=='route')return;
+  if(!EVENT_TILES.has(tileAt(x,y)))return;
+  state.events=state.events||[];
+  const key='ev:'+state.area+':'+x+':'+y;
+  if(state.events.indexOf(key)>=0)return;
+  const r=h2(x*17+state.area*211+11,y*23+state.area*89+7);
+  if(r<.965)return;   // ~3.5% der begehbaren Felder tragen ein Ereignis
+  state.events.push(key);
+  const r2=h2(x*29+state.area*53+3,y*31+state.area*97+5);
+  const pool=eventPoolFor(state.area);
+  const total=pool.reduce((s,e)=>s+e.w,0);
+  let pick=r2*total,ev=pool[pool.length-1];
+  for(const e of pool){if(pick<e.w){ev=e;break;}pick-=e.w;}
+  runEvent(ev.kind,x,y);
+}
+
 let moveLock=false;
+let arenaGateOpen=false; // Schalter/Tor-Rätsel: pro Hallenbesuch zurückgesetzt
+
+// ---- Seltene sichtbare Kryptiden-Momente: kurze Sichtung, kein Kampf, nur Atmosphäre ----
+let sighting=null; // {id,x,y,born,life}
+const SIGHTING_FLAVORS=[
+  'schaut kurz aus dem Gebüsch',
+  'huscht über den Weg',
+  'verschwindet blitzschnell im Dickicht',
+  'beobachtet dich einen Moment lang aus der Ferne'
+];
+// Ein paar Arten verhalten sich sichtbar anders als der Rest
+const SIGHTING_SPECIAL={
+  flatterix:{flavor:'flattert unstet zwischen den Bäumen hin und her',life:1200},
+  flatterax:{flavor:'zieht in einer schnellen Kurve über den Weg',life:1200},
+  aquappi:{flavor:'springt kurz aus dem Wasser und taucht sofort wieder ab',life:1000},
+  aquadon:{flavor:'durchbricht kurz die Wasseroberfläche',life:1000},
+  spuki:{flavor:'verschwindet, kaum dass du hinschaust',life:650},
+  spukrator:{flavor:'löst sich auf, sobald dein Blick es streift',life:650},
+  brockel:{flavor:'liegt reglos da und schnarcht leise – vielleicht doch kein Fels',life:2200},
+  frosti:{flavor:'lugt kurz zwischen den Schneewehen hervor',life:1400}
+};
+function maybeSpawnSighting(){
+  if(sighting||state.loc!=='route')return;
+  if(Math.random()>0.018)return;   // ~1.8% Chance pro Schritt
+  const roster=AREAS[state.area].roster;
+  if(!roster||!roster.length)return;
+  for(let tries=0;tries<8;tries++){
+    const ang=Math.random()*Math.PI*2,dist=2+Math.random()*2;
+    const tx=Math.round(state.px+Math.cos(ang)*dist),ty=Math.round(state.py+Math.sin(ang)*dist);
+    if(tx===state.px&&ty===state.py)continue;
+    const t=tileAt(tx,ty);
+    if(t!=='.'&&t!==','&&t!=='M'&&t!=='V')continue;
+    const unseen=roster.filter(id=>state.seen.indexOf(id)<0);
+    const pool=unseen.length?unseen:roster;
+    const id=pool[Math.floor(Math.random()*pool.length)];
+    const special=SIGHTING_SPECIAL[id];
+    sighting={id,x:tx,y:ty,born:performance.now(),life:(special?special.life:1500)+Math.random()*700};
+    if(state.seen.indexOf(id)<0){state.seen.push(id);saveGame(true);}
+    const f=special?special.flavor:SIGHTING_FLAVORS[Math.floor(Math.random()*SIGHTING_FLAVORS.length)];
+    toast('👀 Du siehst kurz, wie ein <b>'+DEX[id].name+'</b> '+f+'!',2400);
+    break;
+  }
+}
+function drawSighting(){
+  if(!sighting)return;
+  const age=performance.now()-sighting.born;
+  if(age>sighting.life){sighting=null;return;}
+  const alpha=age<300?age/300:(age>sighting.life-400?Math.max(0,(sighting.life-age)/400):1);
+  const sx=Math.round((sighting.x-camX)*TILE),sy=Math.round((sighting.y-camY)*TILE);
+  if(sx<-TILE*2||sy<-TILE*2||sx>VW*TILE+TILE||sy>VH*TILE+TILE){sighting=null;return;}
+  wctx.save();wctx.globalAlpha=alpha;
+  const bob=Math.sin(wfx.t*3)*1.5;
+  paintMon(wctx,sighting.id,sx-3,sy-3+bob,1.6,false,false);
+  wctx.restore();
+}
 async function movePlayer(dx,dy){
   if(state.mode!=='world'||moveLock)return;
   const nx=state.px+dx,ny=state.py+dy;
@@ -1578,21 +2222,43 @@ async function movePlayer(dx,dy){
   if(zt==='S'){suedAusgang();return;}
   if(zt==='H'){openShop();return;}
   if(zt==='A'){
+    arenaGateOpen=false;
     gotoLoc('arena',state.area,[10,15],'⚔️ '+ARENA_NAMES[state.area]+
       (state.area===7?' · fünf Meister ohne Pause':' · '+arenaCount()+' Herausforderer, dann der Meister'));
     return;
   }
   if(zt==='D'){
-    gotoLoc('stadt',state.area,[CITY_DOOR_A[0],CITY_DOOR_A[1]+1],'◀ '+CITY_NAMES[state.area]);
+    gotoLoc('stadt',state.area,[CITY_DEFS[state.area].doorA[0],CITY_DEFS[state.area].doorA[1]+1],'◀ '+CITY_NAMES[state.area]);
     return;
   }
   if(isBlocked(nx,ny))return;
   moveLock=true;
-  wfx.anim={fx:state.px,fy:state.py,tx:nx,ty:ny,k:0};
-  state.px=nx;state.py=ny;
-  checkFind(nx,ny);
-  await wait(130);
-  if(state.loc==='route'&&tileAt(nx,ny)===','&&Math.random()<.2){startWildBattle();moveLock=false;return;}
+  let fx=state.px,fy=state.py,tx=nx,ty=ny,ddx=dx,ddy=dy;
+  // Rätsel-Rutschbahn: Eis (gleiche Richtung) und Windfelder (feste Richtung) verketten sich
+  for(let guard=0;guard<40;guard++){
+    wfx.anim={fx,fy,tx,ty,k:0};
+    state.px=tx;state.py=ty;
+    checkFind(tx,ty);
+    checkRandomEvent(tx,ty);
+    await wait(110);
+    const t=tileAt(tx,ty);
+    if(t==='X'){
+      arenaGateOpen=!arenaGateOpen;
+      toast(arenaGateOpen?'🔵 Ein Tor öffnet sich irgendwo in der Halle...':'🔴 Das Tor schließt sich wieder.',2200);
+    }
+    let ndx=0,ndy=0;
+    if(t==='I'){ndx=ddx;ndy=ddy;}
+    else if(t==='^'){ndx=0;ndy=-1;}
+    else if(t==='v'){ndx=0;ndy=1;}
+    else if(t==='<'){ndx=-1;ndy=0;}
+    else if(t==='>'){ndx=1;ndy=0;}
+    else break;
+    const nx2=tx+ndx,ny2=ty+ndy;
+    if(isBlocked(nx2,ny2))break;
+    fx=tx;fy=ty;tx=nx2;ty=ny2;ddx=ndx;ddy=ndy;
+  }
+  if(state.loc==='route'&&tileAt(state.px,state.py)===','&&Math.random()<.2){startWildBattle();moveLock=false;return;}
+  maybeSpawnSighting();
   moveLock=false;
 }
 const NPC_PALS=[
@@ -1610,7 +2276,55 @@ function talkTo(np){
   dialogAktiv=true;
   const key=state.area+'-'+np.idx;
   state.npcGifts=state.npcGifts||[];
-  const zeilen=np.t.slice();
+  state.npcSeen=state.npcSeen||[];
+  state.quests=state.quests||{};
+  const wiederholung=state.npcSeen.indexOf(key)>=0;
+  if(!wiederholung)state.npcSeen.push(key);
+  const q=np.quest?QUESTS.find(x=>x.id===np.quest):null;
+  let zeilen=np.t.slice();
+  if(q){
+    const st=state.quests[q.id];
+    if(!st){
+      zeilen=zeilen.concat([q.offer]);
+      state.quests[q.id]='active';
+      saveGame(true);
+    }else if(st==='active'){
+      if(q.check()){
+        if(q.legendGate){
+          state.quests[q.id]='guardian';
+          zeilen=[q.guardianWait];
+        }else{
+          if(q.onComplete)q.onComplete();
+          state.quests[q.id]='done';
+          zeilen=[q.complete];
+          grantQuestReward(q);
+        }
+      }else{
+        zeilen=[q.remind];
+      }
+    }else if(st==='guardian'){
+      if(isDone('guardian-'+q.area)){
+        state.quests[q.id]='done';
+        zeilen=[q.complete];
+        grantQuestReward(q);
+      }else{
+        zeilen=[q.guardianWait];
+      }
+    }
+  }
+  // Bei erneutem Besuch ohne offene Quest-Zeile: statt der immer gleichen Sätze ein frisches Gerücht/Tipp
+  if(wiederholung&&(!q||state.quests[q.id]==='done')){
+    const pool=(CHAT_POOLS[state.area]||[]).slice();
+    const rumor=LEGEND_RUMORS[state.area];
+    const needClue=rumor&&LEGEND_DATA[state.area]&&legendClueCount(state.area)<LEGEND_CLUE_KINDS.length&&
+      (state.legendClues||[]).indexOf(state.area+':geruecht')<0;
+    if(needClue)pool.push(rumor);
+    if(pool.length){
+      const line=pool[Math.floor(Math.random()*pool.length)];
+      zeilen=[line];
+      if(needClue&&line===rumor)grantLegendClue(state.area,'geruecht','📖 Ein neues Gerücht macht die Runde...');
+    }
+  }
   let geschenkText=null;
   if(np.gift&&state.npcGifts.indexOf(key)<0){
     state.npcGifts.push(key);
@@ -1640,7 +2354,7 @@ function talkTo(np){
 function gotoLoc(loc,area,pos,hinweis){
   state.loc=loc;state.area=area;
   state.px=pos[0];state.py=pos[1];
-  state.healed=false;wfx.anim=null;
+  state.healed=false;wfx.anim=null;sighting=null;
   saveGame(true);enterWorld();
   if(hinweis)toast(hinweis,3200);
 }
@@ -2022,8 +2736,20 @@ function teamLevel(){
   const list=alive.length?alive:state.team;
   return Math.round(list.reduce((s,m)=>s+m.level,0)/Math.max(1,list.length));
 }
+// Wetter beeinflusst, welche Art wild erscheint (Regen -> mehr Wasser, Sonne -> mehr Feuer, ...)
+function pickWildBase(A){
+  const W=curWeather();
+  if(W){
+    const matching=A.roster.filter(id=>{
+      const d=DEX[id];
+      return d&&(d.type===W.up||d.type2===W.up);
+    });
+    if(matching.length&&Math.random()<.6)return matching[rnd(0,matching.length-1)];
+  }
+  return A.roster[rnd(0,A.roster.length-1)];
+}
 function startWildBattle(){
-  const A=areaDef(),base=A.roster[rnd(0,A.roster.length-1)];
+  const A=areaDef(),base=pickWildBase(A);
   // orientiert sich am eigenen Team, gedeckelt durch das Gebietslimit
   const lvl=Math.max(2,Math.min(A.cap-1,teamLevel()+rnd(-2,1)));
   const shiny=Math.random()<.005;
@@ -2235,7 +2961,7 @@ function continueTo(fn){
 async function playEvolutions(){
   const liste=state.pendingEvo.slice();state.pendingEvo=[];
   for(const p of liste){
-    while(DEX[p.id].evo&&p.level>=DEX[p.id].evoLvl){
+    while(canEvolve(p)){
       const old=mName(p);
       setMsg(`Nanu...? <b>${old}</b> beginnt zu leuchten!`);
       // langsam anschwellendes Leuchten
@@ -2588,7 +3314,7 @@ function trainerWinRewards(){
   if(!isDone(tr.key))state.defeated.push(tr.key);
   let txt=`🏅 ${b.rematch?tr.name+': "Wieder verloren!"':tr.win}<br>💰 +${money} Münzen!`;
   if(b.double)txt+=' (Doppelkampf-Bonus)';
-  if(tr.kind==='boss'&&state.area<7)txt+='<br>🚪 Das Tor ist jetzt offen!';
+  if(tr.kind==='boss'&&state.area<7&&tr.key.endsWith('-boss'))txt+='<br>🚪 Das Tor ist jetzt offen!';
   if(tr.kind==='rival')txt+='<br>Er zieht weiter ins nächste Gebiet...';
   const sc=scrollForTrainer(tr);
   if(sc&&!b.rematch&&!(state.scrolls||[]).includes(tr.key)){
@@ -2626,7 +3352,7 @@ function shareXp(xp,active,only){
           else offen.push({mon:m,move:pair[1]});   // volle Liste: später im Menü
         }
       });
-      while(DEX[m.id].evo&&m.level>=DEX[m.id].evoLvl){
+      while(canEvolve(m)){
         m.id=DEX[m.id].evo;refreshStats(m);markCaught(m.id);
       }
     }
@@ -2662,7 +3388,7 @@ async function grantXp(p,xp,quiet){
     setMsg(`<b>${mName(p)}</b> erreicht Level ${p.level}! 💪`);await readPause();
     await learnAtLevel(p);
     // Entwicklung wird für den Kampfabschluss vorgemerkt
-    if(DEX[p.id].evo&&p.level>=DEX[p.id].evoLvl&&state.pendingEvo.indexOf(p)<0){
+    if(canEvolve(p)&&state.pendingEvo.indexOf(p)<0){
       state.pendingEvo.push(p);
       setMsg(`<b>${mName(p)}</b> wirkt seltsam unruhig...`);await readPause();
     }
@@ -2921,7 +3647,7 @@ async function resolveFaints(){
     b.over=true;
     setMsg('Dein ganzes Team ist erschöpft... Du wachst im Rasthaus auf.');
     healAll();
-    state.loc='stadt';state.px=CITY_DOOR_H[0];state.py=CITY_DOOR_H[1]+1;
+    state.loc='stadt';state.px=CITY_DEFS[state.area].doorH[0];state.py=CITY_DEFS[state.area].doorH[1]+1;
     const lost=Math.floor(state.money*.15);state.money-=lost;
     await wait(900);
     setMsg(`Dein Team wurde geheilt. (💰 -${lost} Münzen für die Pflege)`);
@@ -2975,7 +3701,7 @@ async function playerFaint(){
   if(state.team.filter(m=>m.hp>0).length===0){
     setMsg('Dein ganzes Team ist erschöpft... Du wachst im Rasthaus auf.');
     healAll();
-    state.loc='stadt';state.px=CITY_DOOR_H[0];state.py=CITY_DOOR_H[1]+1;
+    state.loc='stadt';state.px=CITY_DEFS[state.area].doorH[0];state.py=CITY_DEFS[state.area].doorH[1]+1;
     const lost=Math.floor(state.money*.15);state.money-=lost;
     b.over=true;
     await wait(600);
@@ -3482,6 +4208,35 @@ function renderMenu(){
       list.appendChild(r);
     });
   }
+  else if(tab==='quests'){
+    const h=document.createElement('div');h.className='sect';
+    h.textContent='NEBENQUESTS';list.appendChild(h);
+    state.quests=state.quests||{};
+    QUESTS.forEach(q=>{
+      const st=state.quests[q.id]||null;
+      const giver=(NPC_DATA[q.area]&&NPC_DATA[q.area][q.npcIdx])?NPC_DATA[q.area][q.npcIdx].n:'?';
+      let statusTxt,statusCol;
+      if(st==='done'){statusTxt='✓ Abgeschlossen';statusCol='#5aa464';}
+      else if(st==='guardian'){statusTxt='⚔️ Wächter wartet';statusCol='#c94f6d';}
+      else if(st==='active'){statusTxt='… in Arbeit';statusCol='#e8b93c';}
+      else{statusTxt='Noch nicht angenommen';statusCol='#9a9285';}
+      const r=document.createElement('div');r.className='row';r.style.cursor='default';
+      const rewardBits=[];
+      if(q.reward.money)rewardBits.push('💰'+q.reward.money);
+      if(q.reward.item)rewardBits.push('🎁'+ITEMS[q.reward.item].name);
+      if(q.reward.mon)rewardBits.push('✨'+DEX[q.reward.mon].name);
+      r.innerHTML=`<div class="rn">
+        <b>${q.name}</b> <span style="opacity:.7;font-size:9px">· ${CITY_NAMES[q.area]} (${giver})</span><br>
+        <span style="color:${statusCol};font-weight:bold">${statusTxt}</span><br>
+        <span style="opacity:.75">Belohnung: ${rewardBits.join(' · ')}</span>
+      </div>`;
+      list.appendChild(r);
+    });
+    const note=document.createElement('div');
+    note.style.cssText='font-size:10px;opacity:.6;margin-top:4px';
+    note.textContent='Sprich mit den passenden Bewohnern in jeder Stadt, um Quests anzunehmen und abzuschließen.';
+    list.appendChild(note);
+  }
   else if(tab==='dex'){ showDex(); return; }
   showScreen('team');
   $('codeBox').classList.add('hidden');
@@ -3517,9 +4272,32 @@ function showDex(){
       const N=SP[id]?spriteN(SP[id]):12,px=36/N;
       for(let ry=0;ry<N;ry++)for(let rx=0;rx<N;rx++){
         if(SP[id]&&SP[id].r[ry][rx]!=='.')ctx.fillRect(rx*px,ry*px,px,px);}}
+    if(seen){c.style.cursor='pointer';c.addEventListener('click',()=>showDexDetail(id));}
   });
+  $('dexDetail').classList.add('hidden');
   showScreen('dex');
 }
+function showDexDetail(id){
+  const d=DEX[id],caught=state.caught.indexOf(id)>=0;
+  const cv=document.createElement('canvas');cv.width=72;cv.height=72;
+  monCanvas(cv,id,false);
+  const body=$('dexDetailBody');
+  body.innerHTML='';
+  const head=document.createElement('div');
+  head.style.cssText='display:flex;align-items:center;gap:10px;margin-bottom:8px;';
+  head.innerHTML=`<div><b style="font-size:15px">${d.name}</b><br>${badge(d.type)}${d.type2?' '+badge(d.type2):''}${d.legend?' <span style="opacity:.7;font-size:9px">✨ Legendär</span>':''}</div>`;
+  head.prepend(cv);
+  body.appendChild(head);
+  const lore=document.createElement('div');
+  lore.className='mhead';
+  lore.innerHTML=(LORE[id]||'Noch keine Aufzeichnungen über dieses Kryptid.')+
+    (caught?'':'<div style="margin-top:6px;opacity:.7;font-size:9px">Noch nicht gefangen – im Katalog nur gesehen.</div>');
+  body.appendChild(lore);
+  $('dexDetail').classList.remove('hidden');
+}
+document.getElementById('btnDexDetailClose').addEventListener('click',()=>{
+  $('dexDetail').classList.add('hidden');
+});
 
 // ---- Shop ----
 const SHOP_TABS={
@@ -3561,7 +4339,7 @@ function teachMove(m,moveId,cost,scrollKey){
 }
 function openShop(){
   healAll();
-  state.px=CITY_DOOR_H[0];state.py=CITY_DOOR_H[1]+1;
+  state.px=CITY_DEFS[state.area].doorH[0];state.py=CITY_DEFS[state.area].doorH[1]+1;
   state._shopTab='pflege';state._teachMon=null;state._teachAsk=null;
   renderShop();
   showScreen('shop');
