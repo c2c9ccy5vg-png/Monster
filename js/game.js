@@ -792,7 +792,7 @@ const LORE_GATES={
 // Prolog: Startdorf + Verbindungsroute, existieren AUSSERHALB der 8 nummerierten Gebiete
 const PROLOGUE_TOWN={
   name:'Lichthausen',
-  rows:['TTTTTTTTTTTTTTTTTTTTTT','T.........NN.........T','T.........PP.........T','T...BBBBB.PP.........T','T...BBBBB.PP.........T','T...BBHBB.PP.........T','T....PP...PP.........T','T....PP...PP.........T','T.........PP.........T','T.........PPPPPPPPPPCT','T.........PP.........T','T.........PP.........T','T.........PP.........T','T.........PP.........T','T.........PP.........T','T.........PP.........T','T.........PP.........T','TTTTTTTTTTTTTTTTTTTTTT']
+  rows:['TTTTTTTTTTTTTTTTTTTTTT','T.........NN.........T','T.........PP.........T','T...BBBBB.PP.........T','T...BBBBB.PP.........T','T...BBHBB.PP.........T','T....PPPPPPP.........T','T....PP...PP.........T','T.........PP.........T','T.........PPPPPPPPPPCT','T.........PP.........T','T.........PP.........T','T.........PP.........T','T.........PP.........T','T.........PP.........T','T.........PP.........T','T.........PP.........T','TTTTTTTTTTTTTTTTTTTTTT']
 };
 const PROLOGUE_ROUTE={
   rows:['TTTTTTTTTTTTTTTTTTTTTT','T.........NN.........T','T...,,..........,,...T','T..,,,..........,....T','T..,,,..........,,...T','T....................T','T......,,....,,......T','T......,,....,,......T','T....................T','T....................T','T....,,........,,....T','T....,,........,,....T','T....................T','T....................T','T....................T','T.........SS.........T','T....................T','TTTTTTTTTTTTTTTTTTTTTT'],
@@ -3062,7 +3062,11 @@ function talkTo(np){
   const box=$('npcBox'),txt=$('npcText'),nam=$('npcName'),btn=$('npcNext');
   nam.textContent=np.n;
   function zeige(){
-    if(i<zeilen.length){txt.innerHTML=zeilen[i];btn.textContent=(i===zeilen.length-1&&!geschenkText)?'Schließen':'Weiter ▶';}
+    if(i<zeilen.length){
+      txt.innerHTML=zeilen[i];
+      const istLetzte=i===zeilen.length-1&&!geschenkText;
+      btn.textContent=istLetzte&&np.bondStarter&&!state.team.length?'✨ Bindung bestätigen':(istLetzte?'Schließen':'Weiter ▶');
+    }
     else{txt.innerHTML=geschenkText;btn.textContent='Schließen';}
     i++;
   }
@@ -5492,7 +5496,9 @@ function navCancel(){
   const back=items.find(b=>(b.textContent||'').trim().startsWith('◀'));
   if(back){back.click();return;}
   const npcBox=$('npcBox');
-  if(state.mode==='world'&&npcBox&&!npcBox.classList.contains('hidden')){$('npcNext').click();}
+  if(state.mode==='world'&&npcBox&&!npcBox.classList.contains('hidden')){
+    npcBox.classList.add('hidden');dialogAktiv=false;
+  }
 }
 
 const DIRS={up:[0,-1],down:[0,1],left:[-1,0],right:[1,0]};
