@@ -1066,7 +1066,7 @@ const mMoves=m=>m.moves.map(i=>MOVES[i]).filter(Boolean);
 // ============================ ZUSTAND ============================
 const state={team:[],box:[],leadIdx:0,bag:{bindungsstein:5,trank:2},money:600,
   seen:[],caught:[],defeated:[],rivals:[],legends:[],found:[],scrolls:[],npcGifts:[],
-  events:[],npcSeen:[],legendClues:[],quests:{},sideId:null,legendCluePity:{},citiesVisited:[],
+  events:[],npcSeen:[],legendClues:[],quests:{},sideId:null,legendCluePity:{},citiesVisited:[],facing:[0,1],
   pendingLearn:[],pendingEvo:[],area:0,loc:'stadt',px:10,py:15,
   champion:false,mode:'title',healed:false,battle:null,dexRewards:[]};
 
@@ -1757,33 +1757,6 @@ function startIntro(){
   introRaf=requestAnimationFrame(draw);
   cv.addEventListener('click',finishIntro);
   $('btnIntroSkip').addEventListener('click',e=>{e.stopPropagation();finishIntro();});
-}
-function showBondingRitual(np){
-  dialogAktiv=true;
-  const id=np.bondStarter;
-  $('npcName').textContent=np.n;
-  $('npcText').innerHTML=np.t[0]+'<br><br>Spürst du die Verbindung? Ein Bindungsritual beginnt, wenn du bereit bist.';
-  const row=$('starterPickRow');row.innerHTML='';row.classList.remove('hidden');
-  $('npcNext').classList.add('hidden');
-  const btn=document.createElement('button');
-  btn.style.cssText='grid-column:1/-1;';
-  btn.innerHTML=`✨ Bindungsritual mit <b>${DEX[id].name}</b> beginnen`;
-  const go=()=>{
-    state.starter=id;state.team=[makeMonster(id,5)];state.box=[];state.leadIdx=0;
-    state.bag={bindungsstein:5,trank:2};state.money=600;state.seen=[id];state.caught=[id];
-    state.defeated=[];state.rivals=[];state.legends=[];state.found=[];state.scrolls=[];state.npcGifts=[];
-    state.pendingLearn=[];state.pendingEvo=[];state._equip=null;state.champion=false;state.dexRewards=[];
-    state.healed=false;
-    saveGame(true);
-    row.classList.add('hidden');row.innerHTML='';
-    $('npcNext').classList.remove('hidden');
-    $('npcText').innerHTML=`Die Bindung ist geschlossen. <b>${DEX[id].name}</b> tritt an deine Seite – von nun an gehört ihr zusammen.`;
-    dialogAktiv=true;
-    $('npcNext').onclick=()=>{$('npcBox').classList.add('hidden');dialogAktiv=false;};
-  };
-  btn.onclick=go;
-  row.appendChild(btn);
-  $('npcBox').classList.remove('hidden');
 }
 async function initTitle(){
   const row=$('starterRow');row.innerHTML='';
@@ -2844,11 +2817,20 @@ function drawSighting(camX,camY){
   wctx.restore();
 }
 async function movePlayer(dx,dy){
+  if(dx||dy)state.facing=[dx,dy];
   if(state.mode!=='world'||moveLock||dialogAktiv)return;
   const nx=state.px+dx,ny=state.py+dy;
   // Bewohner ansprechen
   const np=npcAt(nx,ny);
-  if(np){talkTo(np);return;}
+  if(np){
+    try{ talkTo(np); }
+    catch(e){
+      dialogAktiv=false;moveLock=false;
+      toast('⚠️ Fehler beim Ansprechen: '+(e.message||e),4000);
+      console.error('talkTo Fehler:',e);
+    }
+    return;
+  }
   const tr=trainerAt(nx,ny);
   if(tr&&!state.team.length){
     toast('🔬 Ohne Gefährten an deiner Seite geht es hier nicht weiter.',2400);
@@ -2991,11 +2973,6 @@ function talkTo(np){
       dbl:false,intro:np.battleIntro||(np.n+' fordert dich heraus!'),win:np.battleWin||(np.n+' erkennt deine Stärke an.')});
     return;
   }
-  if(np.bondStarter&&!state.team.length){
-    dialogAktiv=false;
-    showBondingRitual(np);
-    return;
-  }
   dialogAktiv=true;
   state.npcGifts=state.npcGifts||[];
   state.npcSeen=state.npcSeen||[];
@@ -3089,6 +3066,16 @@ function talkTo(np){
         state.sideId='bindungswiese';
         gotoLoc('side',0,sa.spawn,'🌿 Fabian führt dich zur '+sa.name+'.');
       }
+      if(np.bondStarter&&!state.team.length){
+        const id=np.bondStarter;
+        state.starter=id;state.team=[makeMonster(id,5)];state.box=[];state.leadIdx=0;
+        state.bag={bindungsstein:5,trank:2};state.money=600;state.seen=[id];state.caught=[id];
+        state.defeated=[];state.rivals=[];state.legends=[];state.found=[];state.scrolls=[];state.npcGifts=[];
+        state.pendingLearn=[];state.pendingEvo=[];state._equip=null;state.champion=false;state.dexRewards=[];
+        state.healed=false;
+        saveGame(true);
+        toast('✨ Die Bindung ist geschlossen. '+DEX[id].name+' tritt an deine Seite!',3200);
+      }
       return;
     }
     zeige();
@@ -3101,6 +3088,7 @@ function gotoLoc(loc,area,pos,hinweis){
   state.loc=loc;state.area=area;
   state.px=pos[0];state.py=pos[1];
   state.healed=false;wfx.anim=null;sighting=null;
+  dialogAktiv=false;moveLock=false;
   if(loc==='stadt'){
     state.citiesVisited=state.citiesVisited||[];
     if(state.citiesVisited.indexOf(area)<0)state.citiesVisited.push(area);
@@ -5513,7 +5501,12 @@ $('btnConfirm').addEventListener('pointerdown',e=>{
   e.preventDefault();
   if(state.mode==='world'){
     const npcBox=$('npcBox');
-    if(npcBox&&!npcBox.classList.contains('hidden'))$('npcNext').click();
+    if(npcBox&&!npcBox.classList.contains('hidden')){$('npcNext').click();return;}
+    if(!dialogAktiv&&!moveLock){
+      const f=state.facing||[0,1];
+      const np=npcAt(state.px+f[0],state.py+f[1]);
+      if(np)talkTo(np);
+    }
   }else navConfirm();
 });
 $('btnCancel').addEventListener('pointerdown',e=>{
