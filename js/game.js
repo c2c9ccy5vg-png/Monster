@@ -1387,11 +1387,17 @@ const SIDE_AREAS={
     rows:['TTTTTTTTTTTTTTTTTTTTTT','T....................T','T...,,....,,....,,...T','T...,,....,,....,,...T','T....................T','T....................T','T....................T','T....................T','T....................T','T....................T','T.........DD.........T','TTTTTTTTTTTTTTTTTTTTTT'],
     npcs:[
       {n:'Flamko',key:'bond-flamko',pos:[4,2],bondStarter:'flamko',
-       t:['Ein Flamko schaut neugierig aus dem hohen Gras. Seine Augen folgen jeder deiner Bewegungen.']},
+       t:['Ein Flamko schaut neugierig aus dem hohen Gras. Seine Augen folgen jeder deiner Bewegungen.',
+          '<b>Flamko</b> · Typ Feuer<br><span style="opacity:.8">Flink und hitzköpfig. Wächst über zwei Entwicklungsstufen zu einem mächtigen Flammenwesen heran.</span>',
+          'Möchtest du das Bindungsritual mit diesem Flamko beginnen? Tippe erneut auf Weiter, um es zu bestätigen – oder geh einfach weiter, wenn du dir noch unsicher bist.']},
       {n:'Aquappi',key:'bond-aquappi',pos:[10,2],bondStarter:'aquappi',
-       t:['Ein Aquappi platscht leise im Tau. Es hält kurz inne und mustert dich aufmerksam.']},
+       t:['Ein Aquappi platscht leise im Tau. Es hält kurz inne und mustert dich aufmerksam.',
+          '<b>Aquappi</b> · Typ Wasser<br><span style="opacity:.8">Ruhig und ausdauernd. Wächst über zwei Entwicklungsstufen zu einem imposanten Wasserwesen heran.</span>',
+          'Möchtest du das Bindungsritual mit diesem Aquappi beginnen? Tippe erneut auf Weiter, um es zu bestätigen – oder geh einfach weiter, wenn du dir noch unsicher bist.']},
       {n:'Blattli',key:'bond-blattli',pos:[16,2],bondStarter:'blattli',
-       t:['Ein Blattli wiegt sich im Wind, halb verborgen zwischen den Halmen. Es scheint zu warten.']}
+       t:['Ein Blattli wiegt sich im Wind, halb verborgen zwischen den Halmen. Es scheint zu warten.',
+          '<b>Blattli</b> · Typ Pflanze<br><span style="opacity:.8">Robust und geduldig. Wächst über zwei Entwicklungsstufen zu einem stattlichen Pflanzenwesen heran.</span>',
+          'Möchtest du das Bindungsritual mit diesem Blattli beginnen? Tippe erneut auf Weiter, um es zu bestätigen – oder geh einfach weiter, wenn du dir noch unsicher bist.']}
     ]
   },
   mooshain_steinkreis:{
@@ -1955,6 +1961,7 @@ function npcAt(x,y){
     const liste=(sa&&sa.npcs)||[];
     for(let i=0;i<liste.length;i++){
       const p=liste[i].pos;
+      if(liste[i].bondStarter&&liste[i].bondStarter===state.starter)continue;
       if(p&&p[0]===x&&p[1]===y)return Object.assign({},liste[i],{idx:i,key:liste[i].key||('side-'+state.sideId+'-'+i)});
     }
     return null;
@@ -2525,6 +2532,7 @@ function drawWorld(){
   }else if(state.loc==='side'){
     const sa=SIDE_AREAS[state.sideId];
     ((sa&&sa.npcs)||[]).forEach((np,i)=>{
+      if(np.bondStarter&&np.bondStarter===state.starter)return;
       const p2=np.pos;if(!p2)return;
       const sx=Math.round((p2[0]-camX)*TILE),sy=Math.round((p2[1]-camY)*TILE);
       if(sx<-TILE*2||sy<-TILE*2||sx>VW*TILE+TILE||sy>VH*TILE+TILE)return;
