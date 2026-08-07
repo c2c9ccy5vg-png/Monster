@@ -666,6 +666,8 @@ const ITEMS={
   gegenmittel:{name:'Gegenmittel',desc:'heilt Statusprobleme',price:150,kind:'cure'},
   fokussplitter:{name:'Fokussplitter',desc:'Füllt die AP einer Attacke auf',price:750,kind:'ap',scope:'move'},
   urtonikum:{name:'Ur-Tonikum',desc:'Füllt alle AP eines Kryptids komplett auf',price:0,kind:'ap',scope:'all'},
+  levelkatalysator:{name:'[TEST] Level-Katalysator',desc:'Bringt ein Kryptid sofort auf das aktuelle Level-Limit (inkl. Entwicklung & Attacken)',price:0,kind:'levelmax'},
+  bindungsstein_test:{name:'[TEST] Bindungsstein Perfekt',desc:'100% Fangchance',price:0,kind:'ball',mult:999,matchType:null,matchMult:999},
   ueberreste:{name:'Überreste',desc:'Tragitem: +7% KP pro Runde',price:1200,kind:'held',effect:'regen'},
   machtband:{name:'Machtband',desc:'Tragitem: +15% Schaden',price:1500,kind:'held',effect:'macht'},
   schutzstein:{name:'Schutzstein',desc:'Tragitem: -15% erlittener Schaden',price:1500,kind:'held',effect:'schutz'},
@@ -704,7 +706,8 @@ const ITEMS={
 };
 const SHOP_STOCK=['trank','supertrank','beleber','gegenmittel','fokussplitter','bindungsstein','vertrauensstein','ahnenstein',
   'glutstein','flutstein','wurzelstein','funkenstein','schleierstein','kernstein',
-  'ueberreste','machtband','schutzstein','schnellfeder','fokusgurt','heilkraut'];
+  'ueberreste','machtband','schutzstein','schnellfeder','fokusgurt','heilkraut',
+  'levelkatalysator','bindungsstein_test'];
 const heldEffect=m=>(m&&m.held&&ITEMS[m.held]&&ITEMS[m.held].kind==='held')?ITEMS[m.held].effect:null;
 
 // ============================ KARTEN ============================
@@ -4722,6 +4725,41 @@ function useItem(k){
     });
     setMsg('Welches Monster wiederbeleben?');setActions('sub');return;
   }
+  if(it.kind==='levelmax'){
+    const g=$('actionSub');g.innerHTML='';
+    const cap=effectiveCap();
+    const passend=state.team.map((m,i)=>({m,i})).filter(x=>x.m.level<cap);
+    if(!passend.length){
+      setMsg('Alle Gefährten sind schon auf dem aktuellen Level-Limit.');setTimeout(()=>showBag(true),900);return;
+    }
+    setMsg(`<b>${it.name}</b> bei wem einsetzen?`);
+    passend.forEach(({m})=>{
+      const btn=document.createElement('button');
+      btn.innerHTML=mName(m)+'<span class="mv-sub">Lv.'+m.level+' → Lv.'+cap+'</span>';
+      btn.onclick=()=>doRound({type:'item',run:async()=>{
+        const gelernt=[];
+        while(m.level<cap){
+          m.level++;m.xp=0;m.xpNext=m.level*45;
+          refreshStats(m);m.hp=m.maxHp;
+          (LEARNSETS[FAMILY_OF[m.id]]||[]).forEach(pair=>{
+            if(pair[0]===m.level&&m.moves.indexOf(pair[1])<0){
+              if(m.moves.length<4){m.moves.push(pair[1]);m.ap=apFor(m.moves);gelernt.push(MOVES[pair[1]].name);}
+              else if(!state.pendingLearn.some(x=>x.mon===m&&x.move===pair[1]))state.pendingLearn.push({mon:m,move:pair[1]});
+            }
+          });
+          while(canEvolve(m)){m.id=DEX[m.id].evo;refreshStats(m);m.hp=m.maxHp;markCaught(m.id);}
+        }
+        useItemCount(k);
+        setMsg(`<b>${mName(m)}</b> ist jetzt Lv.${cap}!`+(gelernt.length?' Neu gelernt: '+gelernt.join(', '):''));
+        saveGame(true);
+        await wait(900);return true;
+      }});
+      g.appendChild(btn);
+    });
+    const c=document.createElement('button');c.className='secondary span2';c.textContent='◀ Zurück';
+    c.onclick=()=>showBag(true);g.appendChild(c);
+    setActions('sub');return;
+  }
   if(it.kind==='ap'){
     const g=$('actionSub');g.innerHTML='';
     const passend=state.team.map((m,i)=>({m,i})).filter(x=>x.m.hp>0&&mMoves(x.m).some((mv,mi)=>apOf(x.m,mi)<maxAPof(x.m,mi)));
@@ -4789,10 +4827,15 @@ function tryCatch(ballKey){
     useItemCount(ballKey);
     setMsg(`Du hältst einen ${ITEMS[ballKey].name} zu <b>${mName(e)}</b>...`);
     for(let i=0;i<3;i++){fx.flash=.6;fx.flashCol='255,90,90';e._shake=5;await wait(420);}
-    let chance=(.72-(e.hp/e.maxHp)*.55)*ballMult(ballKey,e);
-    if(e.status)chance+=.12;
-    if(b.legend)chance*=.32;
-    chance=Math.max(.04,Math.min(b.legend?.6:.95,chance));
+    let chance;
+    if(ballKey==='bindungsstein_test'){
+      chance=1;
+    }else{
+      chance=(.72-(e.hp/e.maxHp)*.55)*ballMult(ballKey,e);
+      if(e.status)chance+=.12;
+      if(b.legend)chance*=.32;
+      chance=Math.max(.04,Math.min(b.legend?.6:.95,chance));
+    }
     if(Math.random()<chance){
       b.over=true;markCaught(e.id);
       let sc='';
