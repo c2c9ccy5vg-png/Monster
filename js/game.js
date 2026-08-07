@@ -5304,7 +5304,7 @@ document.getElementById('btnDexDetailClose').addEventListener('click',()=>{
 
 // ---- Shop ----
 const SHOP_TABS={
-  pflege:{title:'🧪 PFLEGE',sub:'Tränke, Beleber und Gegenmittel',kinds:['heal','cure','revive']},
+  pflege:{title:'🧪 PFLEGE',sub:'Tränke, Beleber und Gegenmittel',kinds:['heal','cure','revive','levelmax']},
   fang:{title:'🔴 BINDUNG',sub:'Steine, um freilebenden Kryptiden dein Bündnis anzubieten',kinds:['ball']},
   ausruest:{title:'🎽 AUSRÜSTUNG',sub:'Tragitems – eines pro Kryptide',kinds:['held']}
 };
